@@ -6,7 +6,6 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting")
 
 -- Глобальные настройки
 local Settings = {
@@ -15,19 +14,7 @@ local Settings = {
     FOVBoost = {Enabled = false, Value = 90},
     Noclip = {Enabled = false},
     ESP = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 255), Mode = "AlwaysOnTop"},
-    InfiniteJump = {Enabled = false},
-    EntityNotifier = {Enabled = false},
-    ChatNotifier = {Enabled = false},
-    AutoLoot = {Enabled = false},
-    AntiScreech = {Enabled = false},
-    AntiA90 = {Enabled = false},
-    AntiSnare = {Enabled = false},
-    FullBright = {Enabled = false, Brightness = 1, Min = 0, Max = 2},
-    Flight = {Enabled = false, Speed = 50, Min = 0, Max = 200},
-    AntiCheatBypass = {Enabled = false},
-    KeyChams = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 0), Mode = "AlwaysOnTop"},
-    BookChams = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(0, 255, 255), Mode = "AlwaysOnTop"},
-    AutoInteract = {Enabled = false}
+    InfiniteJump = {Enabled = false}
 }
 
 -- Основной GUI
@@ -222,20 +209,7 @@ local Categories = {
             end
         end}
     }},
-    {Name = "DOORS", Functions = {
-        {Name = "Уведомления о монстрах", Setting = Settings.EntityNotifier},
-        {Name = "Чат-уведомления", Setting = Settings.ChatNotifier},
-        {Name = "Авто-сбор", Setting = Settings.AutoLoot},
-        {Name = "Анти-Screech", Setting = Settings.AntiScreech},
-        {Name = "Анти-A-90", Setting = Settings.AntiA90},
-        {Name = "Анти-Snare", Setting = Settings.AntiSnare},
-        {Name = "Полная яркость", Setting = Settings.FullBright, HasInput = true},
-        {Name = "Полёт", Setting = Settings.Flight, HasInput = true},
-        {Name = "Анти-чит байпас", Setting = Settings.AntiCheatBypass},
-        {Name = "Ключи (Chams)", Setting = Settings.KeyChams, HasSettings = true},
-        {Name = "Книги (Chams)", Setting = Settings.BookChams, HasSettings = true},
-        {Name = "Авто-взаимодействие", Setting = Settings.AutoInteract}
-    }}
+    {Name = "DOORS", Functions = {}}
 }
 
 -- Создание категорий
@@ -357,7 +331,7 @@ for i, category in pairs(Categories) do
                         else
                             InputField.Text = tostring(func.Setting.Value)
                         end
-                    end)
+                    end
                 end)
             end
 
@@ -397,7 +371,7 @@ for i, category in pairs(Categories) do
                     end
 
                     SettingsFrame = Instance.new("Frame")
-                    SettingsFrame.Name = func.Name .. "Settings"
+                    SettingsFrame.Name = "ESPSettings"
                     SettingsFrame.Size = UDim2.new(0, 180, 0, 120)
                     SettingsFrame.Position = UDim2.new(0.5, -90, 0.5, -60)
                     SettingsFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
@@ -414,11 +388,12 @@ for i, category in pairs(Categories) do
                     SettingsStroke.Transparency = 1
                     SettingsStroke.Parent = SettingsFrame
 
+                    -- Заголовок настроек ESP
                     local SettingsTitle = Instance.new("TextLabel")
                     SettingsTitle.Name = "SettingsTitle"
                     SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
                     SettingsTitle.Position = UDim2.new(0, 0, 0, 0)
-                    SettingsTitle.Text = "Настройка " .. func.Name
+                    SettingsTitle.Text = "Настройка ESP"
                     SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
                     SettingsTitle.TextSize = 16
                     SettingsTitle.Font = Enum.Font.SourceSansBold
@@ -427,6 +402,7 @@ for i, category in pairs(Categories) do
                     SettingsTitle.TextTransparency = 1
                     SettingsTitle.Parent = SettingsFrame
 
+                    -- Крестик для закрытия
                     local CloseButton = Instance.new("TextButton")
                     CloseButton.Name = "CloseButton"
                     CloseButton.Size = UDim2.new(0, 30, 0, 30)
@@ -459,6 +435,7 @@ for i, category in pairs(Categories) do
                         end)
                     end)
 
+                    -- Перемещение меню настроек ESP
                     local Dragging = false
                     local DragStart = nil
                     local StartPos = nil
@@ -491,7 +468,7 @@ for i, category in pairs(Categories) do
                     ColorButton.Size = UDim2.new(0, 150, 0, 30)
                     ColorButton.Position = UDim2.new(0, 15, 0, 40)
                     ColorButton.BackgroundColor3 = func.Setting.Color
-                    ColorButton.Text = "Цвет"
+                    ColorButton.Text = "Цвет ESP"
                     ColorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
                     ColorButton.TextSize = 14
                     ColorButton.BackgroundTransparency = 1
@@ -531,6 +508,7 @@ for i, category in pairs(Categories) do
                         ModeButton.Text = "Режим: " .. (func.Setting.Mode == "AlwaysOnTop" and "AOT" or "TW")
                     end)
 
+                    -- Анимация появления
                     local fadeInSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
                     local fadeInStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
                     local fadeInTitle = TweenService:Create(SettingsTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
@@ -758,291 +736,6 @@ local function UpdateInfiniteJump()
     end
 end
 
--- Функционал Entity Notifier
-local EntityConnection = nil
-local function UpdateEntityNotifier()
-    if EntityConnection then
-        EntityConnection:Disconnect()
-        EntityConnection = nil
-    end
-    if Settings.EntityNotifier.Enabled then
-        EntityConnection = workspace.ChildAdded:Connect(function(child)
-            if child:IsA("Model") and (child.Name == "RushMoving" or child.Name == "AmbushMoving") then
-                CreateNotification("DOORS", "Обнаружен " .. child.Name, true)
-            end
-        end)
-    end
-end
-
--- Функционал Chat Notifier
-local ChatConnection = nil
-local function UpdateChatNotifier()
-    if ChatConnection then
-        ChatConnection:Disconnect()
-        ChatConnection = nil
-    end
-    if Settings.ChatNotifier.Enabled then
-        ChatConnection = workspace.ChildAdded:Connect(function(child)
-            if child:IsA("Model") and (child.Name == "RushMoving" or child.Name == "AmbushMoving") then
-                Players.LocalPlayer:Chat("Entity " .. child.Name .. " detected!")
-            end
-        end)
-    end
-end
-
--- Функционал Auto Loot
-local AutoLootConnection = nil
-local function UpdateAutoLoot()
-    if AutoLootConnection then
-        AutoLootConnection:Disconnect()
-        AutoLootConnection = nil
-    end
-    if Settings.AutoLoot.Enabled then
-        AutoLootConnection = RunService.Heartbeat:Connect(function()
-            local character = Players.LocalPlayer.Character
-            if not character then return end
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if not humanoidRootPart then return end
-            for _, item in pairs(workspace.CurrentRooms:GetDescendants()) do
-                if item.Name == "KeyObtain" or item.Name == "BookObtain" then
-                    local distance = (item.Position - humanoidRootPart.Position).Magnitude
-                    if distance < 10 then
-                        fireproximityprompt(item:FindFirstChildOfClass("ProximityPrompt"))
-                    end
-                end
-            end
-        end)
-    end
-end
-
--- Функционал Anti-Screech
-local AntiScreechConnection = nil
-local function UpdateAntiScreech()
-    if AntiScreechConnection then
-        AntiScreechConnection:Disconnect()
-        AntiScreechConnection = nil
-    end
-    if Settings.AntiScreech.Enabled then
-        AntiScreechConnection = workspace.ChildAdded:Connect(function(child)
-            if child.Name == "Screech" then
-                child:Destroy()
-            end
-        end)
-    end
-end
-
--- Функционал Anti-A-90
-local AntiA90Connection = nil
-local function UpdateAntiA90()
-    if AntiA90Connection then
-        AntiA90Connection:Disconnect()
-        AntiA90Connection = nil
-    end
-    if Settings.AntiA90.Enabled then
-        AntiA90Connection = workspace.ChildAdded:Connect(function(child)
-            if child.Name == "A-90" then
-                child:Destroy()
-            end
-        end)
-    end
-end
-
--- Функционал Anti-Snare
-local AntiSnareConnection = nil
-local function UpdateAntiSnare()
-    if AntiSnareConnection then
-        AntiSnareConnection:Disconnect()
-        AntiSnareConnection = nil
-    end
-    if Settings.AntiSnare.Enabled then
-        AntiSnareConnection = workspace.CurrentRooms.DescendantAdded:Connect(function(descendant)
-            if descendant.Name == "Snare" then
-                descendant:Destroy()
-            end
-        end)
-    end
-end
-
--- Функционал Full Bright
-local function UpdateFullBright()
-    if Settings.FullBright.Enabled then
-        Lighting.Brightness = Settings.FullBright.Brightness
-        Lighting.FogEnd = 100000
-        Lighting.GlobalShadows = false
-    else
-        Lighting.Brightness = 1
-        Lighting.FogEnd = 1000
-        Lighting.GlobalShadows = true
-    end
-end
-
--- Функционал Flight
-local FlightConnection = nil
-local function UpdateFlight()
-    if FlightConnection then
-        FlightConnection:Disconnect()
-        FlightConnection = nil
-    end
-    if Settings.Flight.Enabled then
-        local character = Players.LocalPlayer.Character
-        if not character then return end
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if not humanoidRootPart then return end
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.Parent = humanoidRootPart
-        FlightConnection = RunService.Heartbeat:Connect(function()
-            local camera = workspace.CurrentCamera
-            local moveDirection = Vector3.new(0, 0, 0)
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDirection = moveDirection + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                moveDirection = moveDirection - Vector3.new(0, 1, 0)
-            end
-            bodyVelocity.Velocity = moveDirection * Settings.Flight.Speed
-        end)
-    else
-        local character = Players.LocalPlayer.Character
-        if character then
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                local bodyVelocity = humanoidRootPart:FindFirstChildOfClass("BodyVelocity")
-                if bodyVelocity then
-                    bodyVelocity:Destroy()
-                end
-            end
-        end
-    end
-end
-
--- Функционал Anti-Cheat Bypass
-local function UpdateAntiCheatBypass()
-    if Settings.AntiCheatBypass.Enabled then
-        local character = Players.LocalPlayer.Character
-        if not character then return end
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Settings.SpeedBoost.Enabled and Settings.SpeedBoost.Value or 16
-            humanoid.JumpPower = Settings.JumpBoost.Enabled and Settings.JumpBoost.Value or 50
-        end
-        -- Отключение проверки анти-чита (упрощённый подход)
-        for _, script in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-            if script:IsA("Script") and script.Name:find("AntiCheat") then
-                script.Disabled = true
-            end
-        end
-    end
-end
-
--- Функционал Key Chams
-local KeyChams = {}
-local function ApplyKeyChams(inst)
-    local highlight = Instance.new("Highlight")
-    highlight.DepthMode = Settings.KeyChams.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-    highlight.FillColor = Settings.KeyChams.Color
-    highlight.FillTransparency = Settings.KeyChams.Transparency
-    highlight.OutlineColor = Color3.fromRGB(147, 112, 219)
-    highlight.Parent = game:GetService("CoreGui")
-    highlight.Adornee = inst
-    highlight.Enabled = Settings.KeyChams.Enabled
-    table.insert(KeyChams, highlight)
-    return highlight
-end
-
-local function UpdateKeyChams()
-    for _, highlight in pairs(KeyChams) do
-        highlight.Enabled = false
-        highlight:Destroy()
-    end
-    KeyChams = {}
-    if Settings.KeyChams.Enabled then
-        for _, inst in pairs(workspace.CurrentRooms:GetDescendants()) do
-            if inst.Name == "KeyObtain" then
-                ApplyKeyChams(inst)
-            end
-        end
-        workspace.CurrentRooms.DescendantAdded:Connect(function(inst)
-            if inst.Name == "KeyObtain" then
-                ApplyKeyChams(inst)
-            end
-        end)
-    end
-end
-
--- Функционал Book Chams
-local BookChams = {}
-local function ApplyBookChams(inst)
-    local highlight = Instance.new("Highlight")
-    highlight.DepthMode = Settings.BookChams.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-    highlight.FillColor = Settings.BookChams.Color
-    highlight.FillTransparency = Settings.BookChams.Transparency
-    highlight.OutlineColor = Color3.fromRGB(147, 112, 219)
-    highlight.Parent = game:GetService("CoreGui")
-    highlight.Adornee = inst
-    highlight.Enabled = Settings.BookChams.Enabled
-    table.insert(BookChams, highlight)
-    return highlight
-end
-
-local function UpdateBookChams()
-    for _, highlight in pairs(BookChams) do
-        highlight.Enabled = false
-        highlight:Destroy()
-    end
-    BookChams = {}
-    if Settings.BookChams.Enabled then
-        for _, inst in pairs(workspace.CurrentRooms:GetDescendants()) do
-            if inst.Name == "BookObtain" then
-                ApplyBookChams(inst)
-            end
-        end
-        workspace.CurrentRooms.DescendantAdded:Connect(function(inst)
-            if inst.Name == "BookObtain" then
-                ApplyBookChams(inst)
-            end
-        end)
-    end
-end
-
--- Функционал Auto-Interact
-local AutoInteractConnection = nil
-local function UpdateAutoInteract()
-    if AutoInteractConnection then
-        AutoInteractConnection:Disconnect()
-        AutoInteractConnection = nil
-    end
-    if Settings.AutoInteract.Enabled then
-        AutoInteractConnection = RunService.Heartbeat:Connect(function()
-            local character = Players.LocalPlayer.Character
-            if not character then return end
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if not humanoidRootPart then return end
-            for _, obj in pairs(workspace.CurrentRooms:GetDescendants()) do
-                if obj:IsA("Model") and obj:FindFirstChildOfClass("ProximityPrompt") then
-                    local distance = (obj.Position - humanoidRootPart.Position).Magnitude
-                    if distance < 10 then
-                        fireproximityprompt(obj:FindFirstChildOfClass("ProximityPrompt"))
-                    end
-                end
-            end
-        end)
-    end
-end
-
 -- Обновление функций
 RunService.Heartbeat:Connect(function()
     UpdateSpeedBoost()
@@ -1051,18 +744,6 @@ RunService.Heartbeat:Connect(function()
     UpdateNoclip()
     UpdateESP()
     UpdateInfiniteJump()
-    UpdateEntityNotifier()
-    UpdateChatNotifier()
-    UpdateAutoLoot()
-    UpdateAntiScreech()
-    UpdateAntiA90()
-    UpdateAntiSnare()
-    UpdateFullBright()
-    UpdateFlight()
-    UpdateAntiCheatBypass()
-    UpdateKeyChams()
-    UpdateBookChams()
-    UpdateAutoInteract()
 end)
 
 Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -1119,6 +800,7 @@ fadeInTitle:Play()
 local KeyInputFrame = Instance.new("Frame")
 KeyInputFrame.Size = UDim2.new(0, 300, 0, 40)
 KeyInputFrame.Position = UDim2.new(0.5, -150, 0.4, -20)
+KeySystemFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 KeyInputFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 KeyInputFrame.BackgroundTransparency = 1
 KeyInputFrame.Parent = KeySystemFrame
