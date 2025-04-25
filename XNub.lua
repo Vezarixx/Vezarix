@@ -15,7 +15,11 @@ local Settings = {
     Noclip = {Enabled = false},
     ESP = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 255), Mode = "AlwaysOnTop"},
     InfiniteJump = {Enabled = false},
-    DOORESP = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 0, 0), Mode = "AlwaysOnTop"} -- Новая настройка для ESP объектов
+    ESP_Doors = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 0, 0), Mode = "AlwaysOnTop"},
+    ESP_Items = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(0, 255, 0), Mode = "AlwaysOnTop"},
+    ESP_Entities = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(0, 0, 255), Mode = "AlwaysOnTop"},
+    ESP_Furniture = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 0), Mode = "AlwaysOnTop"},
+    ESP_Pictures = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 0, 255), Mode = "AlwaysOnTop"}
 }
 
 -- Основной GUI
@@ -195,8 +199,13 @@ local Categories = {
         {Name = "Бесконечный Прыжок", Setting = Settings.InfiniteJump}
     }},
     {Name = "Визуал", Functions = {
-        {Name = "ESP", Setting = Settings.ESP, HasSettings = true},
-        {Name = "FOV", Setting = Settings.FOVBoost}
+        {Name = "ESP Игроков", Setting = Settings.ESP, HasSettings = true},
+        {Name = "FOV", Setting = Settings.FOVBoost},
+        {Name = "ESP Дверей", Setting = Settings.ESP_Doors, HasSettings = true},
+        {Name = "ESP Предметов", Setting = Settings.ESP_Items, HasSettings = true},
+        {Name = "ESP Сущностей", Setting = Settings.ESP_Entities, HasSettings = true},
+        {Name = "ESP Мебели", Setting = Settings.ESP_Furniture, HasSettings = true},
+        {Name = "ESP Картин", Setting = Settings.ESP_Pictures, HasSettings = true}
     }},
     {Name = "Другое", Functions = {
         {Name = "Noclip", Setting = Settings.Noclip},
@@ -211,7 +220,11 @@ local Categories = {
         end}
     }},
     {Name = "DOORS", Functions = {
-        {Name = "ESP Объектов", Setting = Settings.DOORESP, HasSettings = true} -- Новая функция ESP для DOORS
+        {Name = "ESP Дверей", Setting = Settings.ESP_Doors, HasSettings = true},
+        {Name = "ESP Предметов", Setting = Settings.ESP_Items, HasSettings = true},
+        {Name = "ESP Сущностей", Setting = Settings.ESP_Entities, HasSettings = true},
+        {Name = "ESP Мебели", Setting = Settings.ESP_Furniture, HasSettings = true},
+        {Name = "ESP Картин", Setting = Settings.ESP_Pictures, HasSettings = true}
     }}
 }
 
@@ -498,8 +511,8 @@ for i, category in pairs(Categories) do
                     ModeButton.Text = "Режим: " .. (func.Setting.Mode == "AlwaysOnTop" and "AOT" or "TW")
                     ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
                     ModeButton.TextSize = 14
-                    ColorButton.BackgroundTransparency = 1
-                    ColorButton.TextTransparency = 1
+                    ModeButton.BackgroundTransparency = 1
+                    ModeButton.TextTransparency = 1
                     ModeButton.Parent = SettingsFrame
 
                     local ModeCorner = Instance.new("UICorner")
@@ -561,10 +574,6 @@ for i, category in pairs(Categories) do
         CategoryToggleButton.Text = IsCategoryExpanded and "▲" or "▼"
         CategoryFrame.Size = IsCategoryExpanded and UDim2.new(1, 0, 0, 30 + funcHeight) or UDim2.new(1, 0, 0, 30)
         UpdateCanvasSize()
-
-        if category.Name == "DOORS" and IsCategoryExpanded then
-            CreateNotification(category.Name, "", false)
-        end
     end)
 end
 
@@ -720,52 +729,80 @@ local function UpdateESP()
     end
 end
 
--- Функционал ESP для объектов в DOORS
-local DOORESPObjects = {}
-local function CreateDOORESP(object)
-    if DOORESPObjects[object] then return end
+-- Общий функционал ESP для объектов
+local function CreateObjectESP(object, setting, storage)
+    if storage[object] then return end
     if object:IsA("Model") and object.PrimaryPart then
         local highlight = Instance.new("Highlight")
-        highlight.FillTransparency = Settings.DOORESP.Transparency
-        highlight.FillColor = Settings.DOORESP.Color
+        highlight.FillTransparency = setting.Transparency
+        highlight.FillColor = setting.Color
         highlight.OutlineTransparency = 0
         highlight.OutlineColor = Color3.fromRGB(147, 112, 219)
         highlight.Adornee = object.PrimaryPart
-        highlight.DepthMode = Settings.DOORESP.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+        highlight.DepthMode = setting.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
         highlight.Parent = object.PrimaryPart
-        DOORESPObjects[object] = highlight
+        storage[object] = highlight
     end
 end
 
-local function UpdateDOORESP()
-    if not Settings.DOORESP.Enabled then
-        for _, highlight in pairs(DOORESPObjects) do
+local function UpdateObjectESP(setting, storage, targetNames)
+    if not setting.Enabled then
+        for _, highlight in pairs(storage) do
             highlight.Enabled = false
         end
         return
     end
     -- Удалить выделения для объектов, которые больше не существуют
-    for object, highlight in pairs(DOORESPObjects) do
+    for object, highlight in pairs(storage) do
         if not object.Parent then
             highlight:Destroy()
-            DOORESPObjects[object] = nil
+            storage[object] = nil
         end
     end
     -- Добавить выделения для новых объектов
-    local targetNames = {"Door", "Figure", "Key", "Book", "Candle", "Item"}
     for _, object in pairs(game.Workspace:GetDescendants()) do
-        if object:IsA("Model") and table.find(targetNames, object.Name) and not DOORESPObjects[object] then
-            CreateDOORESP(object)
+        if object:IsA("Model") and table.find(targetNames, object.Name) and not storage[object] then
+            CreateObjectESP(object, setting, storage)
         end
     end
     -- Обновить существующие выделения
-    for object, highlight in pairs(DOORESPObjects) do
+    for object, highlight in pairs(storage) do
         if object.PrimaryPart then
-            highlight.FillColor = Settings.DOORESP.Color
-            highlight.FillTransparency = Settings.DOORESP.Transparency
-            highlight.DepthMode = Settings.DOORESP.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+            highlight.FillColor = setting.Color
+            highlight.FillTransparency = setting.Transparency
+            highlight.DepthMode = setting.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
         end
     end
+end
+
+-- Функционал ESP для дверей
+local ESPDoorsObjects = {}
+local function UpdateESPDoors()
+    UpdateObjectESP(Settings.ESP_Doors, ESPDoorsObjects, {"Door"})
+end
+
+-- Функционал ESP для предметов
+local ESPItemsObjects = {}
+local function UpdateESPItems()
+    UpdateObjectESP(Settings.ESP_Items, ESPItemsObjects, {"Key", "Book", "Candle", "Lighter", "Item"})
+end
+
+-- Функционал ESP для сущностей
+local ESPEntitiesObjects = {}
+local function UpdateESPEntities()
+    UpdateObjectESP(Settings.ESP_Entities, ESPEntitiesObjects, {"Figure", "Rush", "Ambush", "Screech", "A90", "Snare"})
+end
+
+-- Функционал ESP для мебели
+local ESPFurnitureObjects = {}
+local function UpdateESPFurniture()
+    UpdateObjectESP(Settings.ESP_Furniture, ESPFurnitureObjects, {"Locker", "Bed", "Table", "Chair", "Cabinet", "Lever"})
+end
+
+-- Функционал ESP для картин
+local ESPPicturesObjects = {}
+local function UpdateESPPictures()
+    UpdateObjectESP(Settings.ESP_Pictures, ESPPicturesObjects, {"Picture", "Painting", "Poster"})
 end
 
 -- Функционал Infinite Jump
@@ -794,7 +831,11 @@ RunService.Heartbeat:Connect(function()
     UpdateFOVBoost()
     UpdateNoclip()
     UpdateESP()
-    UpdateDOORESP() -- Добавлено обновление для DOORESP
+    UpdateESPDoors()
+    UpdateESPItems()
+    UpdateESPEntities()
+    UpdateESPFurniture()
+    UpdateESPPictures()
     UpdateInfiniteJump()
 end)
 
