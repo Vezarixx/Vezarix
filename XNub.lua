@@ -4,8 +4,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
 
 -- Глобальные настройки
 local Settings = {
@@ -14,198 +13,259 @@ local Settings = {
     FOVBoost = {Enabled = false, Value = 90},
     Noclip = {Enabled = false},
     ESP = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 255), Mode = "AlwaysOnTop"},
-    InfiniteJump = {Enabled = false},
-    ESP_Doors = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 0, 0), Mode = "AlwaysOnTop"},
-    ESP_Items = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(0, 255, 0), Mode = "AlwaysOnTop"},
-    ESP_Entities = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(0, 0, 255), Mode = "AlwaysOnTop"},
-    ESP_Furniture = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 255, 0), Mode = "AlwaysOnTop"},
-    ESP_Pictures = {Enabled = false, Transparency = 0.5, Color = Color3.fromRGB(255, 0, 255), Mode = "AlwaysOnTop"}
+    InfiniteJump = {Enabled = false}
+}
+
+-- Сохранение состояния
+local SavedState = {
+    CategoriesExpanded = {},
+    ScrollPositions = {Categories = 0, Functions = 0},
+    MainMenuOpen = false
 }
 
 -- Основной GUI
 local XHubGUI = Instance.new("ScreenGui")
 XHubGUI.Name = "XHub"
-XHubGUI.Parent = game:GetService("CoreGui")
+XHubGUI.Parent = CoreGui
 XHubGUI.IgnoreGuiInset = true
 XHubGUI.DisplayOrder = 1000
 XHubGUI.Enabled = true
 
--- Главный фрейм
+-- Круглая кнопка для открытия/закрытия основного меню
+local MiniButton = Instance.new("TextButton")
+MiniButton.Size = UDim2.new(0, 50, 0, 50)
+MiniButton.Position = UDim2.new(0.5, -25, 0.5, -25)
+MiniButton.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+MiniButton.Text = "X"
+MiniButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniButton.TextSize = 24
+MiniButton.Font = Enum.Font.SourceSansBold
+MiniButton.BackgroundTransparency = 1
+MiniButton.TextTransparency = 1
+MiniButton.Parent = XHubGUI
+
+local MiniButtonCorner = Instance.new("UICorner")
+MiniButtonCorner.CornerRadius = UDim.new(1, 0)
+MiniButtonCorner.Parent = MiniButton
+
+local MiniButtonStroke = Instance.new("UIStroke")
+MiniButtonStroke.Color = Color3.fromRGB(147, 112, 219)
+MiniButtonStroke.Thickness = 1
+MiniButtonStroke.Transparency = 1
+MiniButtonStroke.Parent = MiniButton
+
+-- Плавное появление круглой кнопки
+local function ShowMiniButton()
+    local fadeInButton = TweenService:Create(MiniButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+    local fadeInStroke = TweenService:Create(MiniButtonStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+    fadeInButton:Play()
+    fadeInStroke:Play()
+end
+
+-- Перемещение круглой кнопки
+local DraggingMini = false
+local DragStartMini = nil
+local StartPosMini = nil
+
+MiniButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        DraggingMini = true
+        DragStartMini = input.Position
+        StartPosMini = MiniButton.Position
+    end
+end)
+
+MiniButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        DraggingMini = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if DraggingMini and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - DragStartMini
+        local newPosX = StartPosMini.X.Offset + delta.X
+        local newPosY = StartPosMini.Y.Offset + delta.Y
+        MiniButton.Position = UDim2.new(StartPosMini.X.Scale, newPosX, StartPosMini.Y.Scale, newPosY)
+    end
+end)
+
+-- Основной фрейм
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 200, 0, 40)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 900, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -450, 0.5, -250)
 MainFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
-MainFrame.BackgroundTransparency = 0
-MainFrame.BorderSizePixel = 0
+MainFrame.BackgroundTransparency = 1
+MainFrame.Active = true
+MainFrame.Visible = false
 MainFrame.Parent = XHubGUI
 
--- Закругленные углы
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
 
--- Тонкая фиолетовая обводка
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(147, 112, 219)
-UIStroke.Thickness = 1
-UIStroke.Parent = MainFrame
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(147, 112, 219)
+MainStroke.Thickness = 1
+MainStroke.Transparency = 1
+MainStroke.Parent = MainFrame
 
--- Заголовок "X Hub"
+-- Заголовок
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 50)
+TitleBar.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+TitleBar.BackgroundTransparency = 1
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+local TitleStroke = Instance.new("UIStroke")
+TitleStroke.Color = Color3.fromRGB(147, 112, 219)
+TitleStroke.Thickness = 1
+TitleStroke.Transparency = 1
+TitleStroke.Parent = TitleBar
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0.7, 0, 0, 40)
-Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
+Title.Position = UDim2.new(0, 20, 0, 0)
 Title.Text = "X Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 20
+Title.TextSize = 24
 Title.Font = Enum.Font.SourceSansBold
 Title.BackgroundTransparency = 1
+Title.TextTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = MainFrame
+Title.Parent = TitleBar
 
--- Кнопка сворачивания/разворачивания
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-ToggleButton.Position = UDim2.new(1, -35, 0, 5)
-ToggleButton.Text = "▲"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 18
-ToggleButton.BackgroundTransparency = 1
-ToggleButton.Parent = MainFrame
+-- Кнопка закрытия
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -40, 0, 10)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 18
+CloseButton.BackgroundTransparency = 1
+CloseButton.TextTransparency = 1
+CloseButton.Parent = TitleBar
 
--- Анимация появления заголовка
-local titleFadeIn = TweenService:Create(Title, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-titleFadeIn:Play()
+-- Разделитель
+local Divider = Instance.new("Frame")
+Divider.Size = UDim2.new(0, 2, 0, 450)
+Divider.Position = UDim2.new(0, 250, 0, 50)
+Divider.BackgroundColor3 = Color3.fromRGB(147, 112, 219)
+Divider.BackgroundTransparency = 1
+Divider.Parent = MainFrame
 
--- Фрейм для прокрутки
-local ScrollFrame = Instance.new("ScrollingFrame")
-ScrollFrame.Size = UDim2.new(1, 0, 1, -40)
-ScrollFrame.Position = UDim2.new(0, 0, 0, 40)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 4
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(147, 112, 219)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-ScrollFrame.Visible = false
-ScrollFrame.Parent = MainFrame
+-- Левая часть (категории)
+local CategoriesFrame = Instance.new("ScrollingFrame")
+CategoriesFrame.Size = UDim2.new(0, 250, 0, 450)
+CategoriesFrame.Position = UDim2.new(0, 0, 0, 50)
+CategoriesFrame.BackgroundTransparency = 1
+CategoriesFrame.ScrollBarThickness = 4
+CategoriesFrame.ScrollBarImageColor3 = Color3.fromRGB(147, 112, 219)
+CategoriesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+CategoriesFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+CategoriesFrame.Parent = MainFrame
 
--- UIListLayout для прокрутки
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
-UIListLayout.Parent = ScrollFrame
+local CategoriesListLayout = Instance.new("UIListLayout")
+CategoriesListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+CategoriesListLayout.Padding = UDim.new(0, 5)
+CategoriesListLayout.Parent = CategoriesFrame
+
+-- Правая часть (функции)
+local FunctionsFrame = Instance.new("ScrollingFrame")
+FunctionsFrame.Size = UDim2.new(0, 648, 0, 450)
+FunctionsFrame.Position = UDim2.new(0, 252, 0, 50)
+FunctionsFrame.BackgroundTransparency = 1
+FunctionsFrame.ScrollBarThickness = 4
+FunctionsFrame.ScrollBarImageColor3 = Color3.fromRGB(147, 112, 219)
+FunctionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+FunctionsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+FunctionsFrame.Parent = MainFrame
+
+local FunctionsListLayout = Instance.new("UIListLayout")
+FunctionsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+FunctionsListLayout.Padding = UDim.new(0, 5)
+FunctionsListLayout.Parent = FunctionsFrame
 
 -- Функция для обновления CanvasSize
-local function UpdateCanvasSize()
+local function UpdateCanvasSize(scrollFrame, layout)
     local totalHeight = 0
-    for _, child in pairs(ScrollFrame:GetChildren()) do
+    for _, child in pairs(scrollFrame:GetChildren()) do
         if child:IsA("Frame") then
-            totalHeight = totalHeight + child.Size.Y.Offset + UIListLayout.Padding.Offset
+            totalHeight = totalHeight + child.Size.Y.Offset + layout.Padding.Offset
         end
     end
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
 end
 
--- Уведомления
-local NotificationGUI = Instance.new("ScreenGui")
-NotificationGUI.Name = "XHubNotifications"
-NotificationGUI.Parent = game:GetService("CoreGui")
-NotificationGUI.IgnoreGuiInset = true
-
-local NotificationContainer = Instance.new("Frame")
-NotificationContainer.Size = UDim2.new(0, 250, 0, 300)
-NotificationContainer.Position = UDim2.new(1, -260, 1, -310)
-NotificationContainer.BackgroundTransparency = 1
-NotificationContainer.Parent = NotificationGUI
-
-local NotificationListLayout = Instance.new("UIListLayout")
-NotificationListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-NotificationListLayout.Padding = UDim.new(0, 5)
-NotificationListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-NotificationListLayout.Parent = NotificationContainer
-
-local function CreateNotification(category, funcName, enabled)
-    local NotificationFrame = Instance.new("Frame")
-    NotificationFrame.Size = UDim2.new(1, 0, 0, 60)
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
-    NotificationFrame.BackgroundTransparency = 1
-    NotificationFrame.Parent = NotificationContainer
-
-    local NotifCorner = Instance.new("UICorner")
-    NotifCorner.CornerRadius = UDim.new(0, 10)
-    NotifCorner.Parent = NotificationFrame
-
-    local NotifStroke = Instance.new("UIStroke")
-    NotifStroke.Color = Color3.fromRGB(147, 112, 219)
-    NotifStroke.Thickness = 1
-    NotifStroke.Transparency = 1
-    NotifStroke.Parent = NotificationFrame
-
-    local NotifTitle = Instance.new("TextLabel")
-    NotifTitle.Size = UDim2.new(1, -20, 0, 20)
-    NotifTitle.Position = UDim2.new(0, 10, 0, 5)
-    NotifTitle.Text = "Уведомление"
-    NotifTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NotifTitle.TextSize = 16
-    NotifTitle.Font = Enum.Font.SourceSansBold
-    NotifTitle.BackgroundTransparency = 1
-    NotifTitle.TextXAlignment = Enum.TextXAlignment.Left
-    NotifTitle.TextTransparency = 1
-    NotifTitle.Parent = NotificationFrame
-
-    local NotifText = Instance.new("TextLabel")
-    NotifText.Size = UDim2.new(1, -20, 0, 30)
-    NotifText.Position = UDim2.new(0, 10, 0, 25)
-    NotifText.Text = (enabled and "Включено: " or "Выключено: ") .. category .. " - " .. funcName
-    NotifText.TextColor3 = Color3.fromRGB(147, 112, 219)
-    NotifText.TextSize = 14
-    NotifText.Font = Enum.Font.SourceSans
-    NotifText.BackgroundTransparency = 1
-    NotifText.TextXAlignment = Enum.TextXAlignment.Left
-    NotifText.TextTransparency = 1
-    NotifText.Parent = NotificationFrame
-
-    -- Анимация появления
-    local fadeInFrame = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
-    local fadeInStroke = TweenService:Create(NotifStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
-    local fadeInTitle = TweenService:Create(NotifTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-    local fadeInText = TweenService:Create(NotifText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-    fadeInFrame:Play()
-    fadeInStroke:Play()
-    fadeInTitle:Play()
-    fadeInText:Play()
-
-    -- Анимация исчезновения
-    spawn(function()
-        wait(3)
-        local fadeOutFrame = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
-        local fadeOutStroke = TweenService:Create(NotifStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
-        local fadeOutTitle = TweenService:Create(NotifTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-        local fadeOutText = TweenService:Create(NotifText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-        fadeOutFrame:Play()
-        fadeOutStroke:Play()
-        fadeOutTitle:Play()
-        fadeOutText:Play()
-        fadeOutFrame.Completed:Connect(function()
-            NotificationFrame:Destroy()
-        end)
-    end)
+-- Плавное открытие/закрытие главного меню
+local function ToggleMainMenu()
+    SavedState.MainMenuOpen = not SavedState.MainMenuOpen
+    MainFrame.Visible = SavedState.MainMenuOpen
+    local transparency = SavedState.MainMenuOpen and 0 or 1
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local fadeMain = TweenService:Create(MainFrame, tweenInfo, {BackgroundTransparency = transparency})
+    local fadeStroke = TweenService:Create(MainStroke, tweenInfo, {Transparency = transparency})
+    local fadeTitleBar = TweenService:Create(TitleBar, tweenInfo, {BackgroundTransparency = transparency})
+    local fadeTitleStroke = TweenService:Create(TitleStroke, tweenInfo, {Transparency = transparency})
+    local fadeTitle = TweenService:Create(Title, tweenInfo, {TextTransparency = transparency})
+    local fadeClose = TweenService:Create(CloseButton, tweenInfo, {TextTransparency = transparency})
+    local fadeDivider = TweenService:Create(Divider, tweenInfo, {BackgroundTransparency = transparency})
+    fadeMain:Play()
+    fadeStroke:Play()
+    fadeTitleBar:Play()
+    fadeTitleStroke:Play()
+    fadeTitle:Play()
+    fadeClose:Play()
+    fadeDivider:Play()
 end
+
+MiniButton.MouseButton1Click:Connect(ToggleMainMenu)
+CloseButton.MouseButton1Click:Connect(ToggleMainMenu)
+
+-- Перемещение главного меню
+local DraggingMain = false
+local DragStartMain = nil
+local StartPosMain = nil
+
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        DraggingMain = true
+        DragStartMain = input.Position
+        StartPosMain = MainFrame.Position
+    end
+end)
+
+Title.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        DraggingMain = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if DraggingMain and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - DragStartMain
+        local newPosX = StartPosMain.X.Offset + delta.X
+        local newPosY = StartPosMain.Y.Offset + delta.Y
+        MainFrame.Position = UDim2.new(StartPosMain.X.Scale, newPosX, StartPosMain.Y.Scale, newPosY)
+    end
+end)
 
 -- Категории
 local Categories = {
+    {Name = "Основные функции", Functions = {
+        {Name = "ESP", Setting = Settings.ESP, HasSettings = true}
+    }},
     {Name = "Движение", Functions = {
         {Name = "Скорость", Setting = Settings.SpeedBoost, HasInput = true},
         {Name = "Прыжок", Setting = Settings.JumpBoost, HasInput = true},
         {Name = "Бесконечный Прыжок", Setting = Settings.InfiniteJump}
     }},
     {Name = "Визуал", Functions = {
-        {Name = "ESP Игроков", Setting = Settings.ESP, HasSettings = true},
-        {Name = "FOV", Setting = Settings.FOVBoost},
-        {Name = "ESP Дверей", Setting = Settings.ESP_Doors, HasSettings = true},
-        {Name = "ESP Предметов", Setting = Settings.ESP_Items, HasSettings = true},
-        {Name = "ESP Сущностей", Setting = Settings.ESP_Entities, HasSettings = true},
-        {Name = "ESP Мебели", Setting = Settings.ESP_Furniture, HasSettings = true},
-        {Name = "ESP Картин", Setting = Settings.ESP_Pictures, HasSettings = true}
+        {Name = "FOV", Setting = Settings.FOVBoost}
     }},
     {Name = "Другое", Functions = {
         {Name = "Noclip", Setting = Settings.Noclip},
@@ -219,406 +279,450 @@ local Categories = {
             end
         end}
     }},
-    {Name = "DOORS", Functions = {
-        {Name = "ESP Дверей", Setting = Settings.ESP_Doors, HasSettings = true},
-        {Name = "ESP Предметов", Setting = Settings.ESP_Items, HasSettings = true},
-        {Name = "ESP Сущностей", Setting = Settings.ESP_Entities, HasSettings = true},
-        {Name = "ESP Мебели", Setting = Settings.ESP_Furniture, HasSettings = true},
-        {Name = "ESP Картин", Setting = Settings.ESP_Pictures, HasSettings = true}
-    }}
+    {Name = "DOORS", Functions = {}}
 }
 
 -- Создание категорий
 for i, category in pairs(Categories) do
-    local CategoryFrame = Instance.new("Frame")
-    CategoryFrame.Size = UDim2.new(1, 0, 0, 30)
-    CategoryFrame.BackgroundTransparency = 1
-    CategoryFrame.LayoutOrder = i
-    CategoryFrame.Parent = ScrollFrame
+    local CategoryButtonFrame = Instance.new("Frame")
+    CategoryButtonFrame.Size = UDim2.new(1, -10, 0, 40)
+    CategoryButtonFrame.Position = UDim2.new(0, 5, 0, 0)
+    CategoryButtonFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    CategoryButtonFrame.BackgroundTransparency = 1
+    CategoryButtonFrame.LayoutOrder = i
+    CategoryButtonFrame.Parent = CategoriesFrame
 
-    local CategoryLabel = Instance.new("TextLabel")
-    CategoryLabel.Size = UDim2.new(0.7, 0, 1, 0)
-    CategoryLabel.Position = UDim2.new(0, 10, 0, 0)
-    CategoryLabel.Text = category.Name
-    CategoryLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CategoryLabel.TextSize = 16
-    CategoryLabel.Font = Enum.Font.SourceSansBold
-    CategoryLabel.BackgroundTransparency = 1
-    CategoryLabel.TextXAlignment = Enum.TextXAlignment.Left
-    CategoryLabel.Parent = CategoryFrame
+    local CategoryCorner = Instance.new("UICorner")
+    CategoryCorner.CornerRadius = UDim.new(0, 8)
+    CategoryCorner.Parent = CategoryButtonFrame
 
-    local CategoryToggleButton = Instance.new("TextButton")
-    CategoryToggleButton.Size = UDim2.new(0, 20, 0, 20)
-    CategoryToggleButton.Position = UDim2.new(1, -30, 0, 5)
-    CategoryToggleButton.Text = "▼"
-    CategoryToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CategoryToggleButton.TextSize = 14
-    CategoryToggleButton.BackgroundTransparency = 1
-    CategoryToggleButton.Parent = CategoryFrame
+    local CategoryStroke = Instance.new("UIStroke")
+    CategoryStroke.Color = Color3.fromRGB(147, 112, 219)
+    CategoryStroke.Thickness = 1
+    CategoryStroke.Transparency = 1
+    CategoryStroke.Parent = CategoryButtonFrame
 
-    local FunctionsFrame = Instance.new("Frame")
-    FunctionsFrame.Size = UDim2.new(1, 0, 0, 0)
-    FunctionsFrame.Position = UDim2.new(0, 0, 0, 30)
-    FunctionsFrame.BackgroundTransparency = 1
-    FunctionsFrame.ClipsDescendants = true
-    FunctionsFrame.Parent = CategoryFrame
+    local CategoryButton = Instance.new("TextButton")
+    CategoryButton.Size = UDim2.new(1, -10, 1, -10)
+    CategoryButton.Position = UDim2.new(0, 5, 0, 5)
+    CategoryButton.BackgroundTransparency = 1
+    CategoryButton.Text = category.Name
+    CategoryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CategoryButton.TextSize = 16
+    CategoryButton.Font = Enum.Font.SourceSansBold
+    CategoryButton.TextTransparency = 1
+    CategoryButton.Parent = CategoryButtonFrame
 
-    local FunctionsListLayout = Instance.new("UIListLayout")
-    FunctionsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    FunctionsListLayout.Padding = UDim.new(0, 5)
-    FunctionsListLayout.Parent = FunctionsFrame
+    local function UpdateCategoryButton()
+        CategoryButtonFrame.BackgroundTransparency = SavedState.CategoriesExpanded[category.Name] and 0 or 0.5
+    end
 
-    -- Создание функций в категории
-    for j, func in pairs(category.Functions) do
-        local FuncFrame = Instance.new("Frame")
-        local height = 30
-        if func.HasInput then height = height + 30 end
-        FuncFrame.Size = UDim2.new(1, 0, 0, height)
-        FuncFrame.BackgroundTransparency = 1
-        FuncFrame.LayoutOrder = j
-        FuncFrame.Parent = FunctionsFrame
+    -- Плавное появление категории
+    local fadeInCategory = TweenService:Create(CategoryButtonFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5})
+    local fadeInStroke = TweenService:Create(CategoryStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+    local fadeInText = TweenService:Create(CategoryButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+    fadeInCategory:Play()
+    fadeInStroke:Play()
+    fadeInText:Play()
 
-        local FuncLabel = Instance.new("TextLabel")
-        FuncLabel.Size = UDim2.new(0.7, 0, 0, 30)
-        FuncLabel.Position = UDim2.new(0, 10, 0, 0)
-        FuncLabel.Text = func.Name
-        FuncLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        FuncLabel.TextSize = 14
-        FuncLabel.Font = Enum.Font.SourceSans
-        FuncLabel.BackgroundTransparency = 1
-        FuncLabel.TextXAlignment = Enum.TextXAlignment.Left
-        FuncLabel.Parent = FuncFrame
-
-        if func.Name ~= "Перезайти" then
-            local ToggleCircle = Instance.new("TextButton")
-            ToggleCircle.Size = UDim2.new(0, 20, 0, 20)
-            ToggleCircle.Position = UDim2.new(1, -30, 0, 5)
-            ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleCircle.Text = ""
-            ToggleCircle.Parent = FuncFrame
-
-            local CircleCorner = Instance.new("UICorner")
-            CircleCorner.CornerRadius = UDim.new(1, 0)
-            CircleCorner.Parent = ToggleCircle
-
-            local CircleStroke = Instance.new("UIStroke")
-            CircleStroke.Color = Color3.fromRGB(147, 112, 219)
-            CircleStroke.Thickness = 1
-            CircleStroke.Parent = ToggleCircle
-
-            local function UpdateToggle()
-                ToggleCircle.BackgroundColor3 = func.Setting.Enabled and Color3.fromRGB(147, 112, 219) or Color3.fromRGB(255, 255, 255)
+    CategoryButton.MouseButton1Click:Connect(function()
+        -- Очистка функций
+        for _, child in pairs(FunctionsFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
             end
+        end
 
-            ToggleCircle.MouseButton1Click:Connect(function()
-                func.Setting.Enabled = not func.Setting.Enabled
-                UpdateToggle()
-                CreateNotification(category.Name, func.Name, func.Setting.Enabled)
-            end)
+        SavedState.CategoriesExpanded[category.Name] = true
+        for _, cat in pairs(Categories) do
+            if cat.Name ~= category.Name then
+                SavedState.CategoriesExpanded[cat.Name] = false
+            end
+        end
 
-            UpdateToggle()
+        -- Обновление визуала категорий
+        for _, child in pairs(CategoriesFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                local button = child:FindFirstChildWhichIsA("TextButton")
+                if button then
+                    local catName = button.Text
+                    child.BackgroundTransparency = SavedState.CategoriesExpanded[catName] and 0 or 0.5
+                end
+            end
+        end
 
-            if func.HasInput then
-                local InputField = Instance.new("TextBox")
-                InputField.Size = UDim2.new(0.8, 0, 0, 25)
-                InputField.Position = UDim2.new(0, 10, 0, 35)
-                InputField.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-                InputField.Text = tostring(func.Setting.Value)
-                InputField.TextColor3 = Color3.fromRGB(255, 255, 255)
-                InputField.TextSize = 14
-                InputField.Font = Enum.Font.SourceSans
-                InputField.Parent = FuncFrame
+        -- Создание функций
+        for j, func in pairs(category.Functions) do
+            local FuncFrame = Instance.new("Frame")
+            local height = func.HasInput and 70 or 40
+            FuncFrame.Size = UDim2.new(1, -10, 0, height)
+            FuncFrame.Position = UDim2.new(0, 5, 0, 0)
+            FuncFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            FuncFrame.BackgroundTransparency = 1
+            FuncFrame.LayoutOrder = j
+            FuncFrame.Parent = FunctionsFrame
 
-                local InputCorner = Instance.new("UICorner")
-                InputCorner.CornerRadius = UDim.new(0, 5)
-                InputCorner.Parent = InputField
+            local FuncCorner = Instance.new("UICorner")
+            FuncCorner.CornerRadius = UDim.new(0, 8)
+            FuncCorner.Parent = FuncFrame
 
-                local InputStroke = Instance.new("UIStroke")
-                InputStroke.Color = Color3.fromRGB(147, 112, 219)
-                InputStroke.Thickness = 1
-                InputStroke.Parent = InputField
+            local FuncStroke = Instance.new("UIStroke")
+            FuncStroke.Color = Color3.fromRGB(147, 112, 219)
+            FuncStroke.Thickness = 1
+            FuncStroke.Transparency = 1
+            FuncStroke.Parent = FuncFrame
 
-                InputField.FocusLost:Connect(function(enterPressed)
-                    if enterPressed then
-                        local value = tonumber(InputField.Text)
-                        if value then
-                            func.Setting.Value = math.clamp(value, func.Setting.Min, func.Setting.Max)
-                            InputField.Text = tostring(func.Setting.Value)
-                        else
-                            InputField.Text = tostring(func.Setting.Value)
-                        end
-                    end
+            local FuncLabel = Instance.new("TextLabel")
+            FuncLabel.Size = UDim2.new(0.7, 0, 0, 40)
+            FuncLabel.Position = UDim2.new(0, 10, 0, 0)
+            FuncLabel.Text = func.Name
+            FuncLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            FuncLabel.TextSize = 14
+            FuncLabel.Font = Enum.Font.SourceSans
+            FuncLabel.BackgroundTransparency = 1
+            FuncLabel.TextTransparency = 1
+            FuncLabel.TextXAlignment = Enum.TextXAlignment.Left
+            FuncLabel.Parent = FuncFrame
+
+            -- Плавное появление функции
+            local fadeInFunc = TweenService:Create(FuncFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
+            local fadeInFuncStroke = TweenService:Create(FuncStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+            local fadeInFuncText = TweenService:Create(FuncLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+            fadeInFunc:Play()
+            fadeInFuncStroke:Play()
+            fadeInFuncText:Play()
+
+            if func.Name ~= "Перезайти" then
+                local ToggleButton = Instance.new("TextButton")
+                ToggleButton.Size = UDim2.new(0, 30, 0, 30)
+                ToggleButton.Position = UDim2.new(1, -40, 0, 5)
+                ToggleButton.BackgroundColor3 = func.Setting.Enabled and Color3.fromRGB(147, 112, 219) or Color3.fromRGB(255, 255, 255)
+                ToggleButton.Text = ""
+                ToggleButton.BackgroundTransparency = 1
+                ToggleButton.Parent = FuncFrame
+
+                local ToggleCorner = Instance.new("UICorner")
+                ToggleCorner.CornerRadius = UDim.new(0, 8)
+                ToggleCorner.Parent = ToggleButton
+
+                local ToggleStroke = Instance.new("UIStroke")
+                ToggleStroke.Color = Color3.fromRGB(147, 112, 219)
+                ToggleStroke.Thickness = 1
+                ToggleStroke.Transparency = 1
+                ToggleStroke.Parent = ToggleButton
+
+                local fadeInToggle = TweenService:Create(ToggleButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
+                local fadeInToggleStroke = TweenService:Create(ToggleStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+                fadeInToggle:Play()
+                fadeInToggleStroke:Play()
+
+                local function UpdateToggle()
+                    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                    local color = func.Setting.Enabled and Color3.fromRGB(147, 112, 219) or Color3.fromRGB(255, 255, 255)
+                    local tween = TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = color})
+                    tween:Play()
+                end
+
+                ToggleButton.MouseButton1Click:Connect(function()
+                    func.Setting.Enabled = not func.Setting.Enabled
+                    UpdateToggle()
                 end)
-            end
 
-            if func.HasSettings then
-                local SettingsButton = Instance.new("TextButton")
-                SettingsButton.Size = UDim2.new(0, 20, 0, 20)
-                SettingsButton.Position = UDim2.new(1, -60, 0, 5)
-                SettingsButton.Text = "⚙"
-                SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                SettingsButton.BackgroundTransparency = 1
-                SettingsButton.Parent = FuncFrame
+                if func.HasInput then
+                    local InputField = Instance.new("TextBox")
+                    InputField.Size = UDim2.new(0.8, 0, 0, 25)
+                    InputField.Position = UDim2.new(0, 10, 0, 40)
+                    InputField.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                    InputField.Text = tostring(func.Setting.Value)
+                    InputField.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    InputField.TextSize = 14
+                    InputField.Font = Enum.Font.SourceSans
+                    InputField.BackgroundTransparency = 1
+                    InputField.TextTransparency = 1
+                    InputField.Parent = FuncFrame
 
-                local SettingsFrame = nil
+                    local InputCorner = Instance.new("UICorner")
+                    InputCorner.CornerRadius = UDim.new(0, 5)
+                    InputCorner.Parent = InputField
 
-                SettingsButton.MouseButton1Click:Connect(function()
-                    if SettingsFrame then
-                        -- Анимация исчезновения при повторном нажатии
-                        local fadeOutSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
-                        local fadeOutStroke = TweenService:Create(SettingsFrame:FindFirstChild("UIStroke"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
-                        local fadeOutTitle = TweenService:Create(SettingsFrame:FindFirstChild("SettingsTitle"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-                        local fadeOutCloseButton = TweenService:Create(SettingsFrame:FindFirstChild("CloseButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-                        local fadeOutColorButton = TweenService:Create(SettingsFrame:FindFirstChild("ColorButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
-                        local fadeOutModeButton = TweenService:Create(SettingsFrame:FindFirstChild("ModeButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+                    local InputStroke = Instance.new("UIStroke")
+                    InputStroke.Color = Color3.fromRGB(147, 112, 219)
+                    InputStroke.Thickness = 1
+                    InputStroke.Transparency = 1
+                    InputStroke.Parent = InputField
 
-                        fadeOutSettings:Play()
-                        fadeOutStroke:Play()
-                        fadeOutTitle:Play()
-                        fadeOutCloseButton:Play()
-                        fadeOutColorButton:Play()
-                        fadeOutModeButton:Play()
+                    local fadeInInput = TweenService:Create(InputField, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+                    local fadeInInputStroke = TweenService:Create(InputStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+                    fadeInInput:Play()
+                    fadeInInputStroke:Play()
 
-                        fadeOutSettings.Completed:Connect(function()
-                            SettingsFrame:Destroy()
-                            SettingsFrame = nil
-                        end)
-                        return
-                    end
+                    InputField.FocusLost:Connect(function(enterPressed)
+                        if enterPressed then
+                            local value = tonumber(InputField.Text)
+                            if value then
+                                func.Setting.Value = math.clamp(value, func.Setting.Min, func.Setting.Max)
+                                InputField.Text = tostring(func.Setting.Value)
+                            else
+                                InputField.Text = tostring(func.Setting.Value)
+                            end
+                        end
+                    end)
+                end
 
-                    SettingsFrame = Instance.new("Frame")
-                    SettingsFrame.Name = "ESPSettings"
-                    SettingsFrame.Size = UDim2.new(0, 180, 0, 120)
-                    SettingsFrame.Position = UDim2.new(0.5, -90, 0.5, -60)
-                    SettingsFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
-                    SettingsFrame.BackgroundTransparency = 1
-                    SettingsFrame.Parent = XHubGUI
+                if func.HasSettings then
+                    local SettingsButton = Instance.new("TextButton")
+                    SettingsButton.Size = UDim2.new(0, 30, 0, 30)
+                    SettingsButton.Position = UDim2.new(1, -80, 0, 5)
+                    SettingsButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                    SettingsButton.Text = "⚙"
+                    SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    SettingsButton.TextSize = 14
+                    SettingsButton.BackgroundTransparency = 1
+                    SettingsButton.TextTransparency = 1
+                    SettingsButton.Parent = FuncFrame
 
                     local SettingsCorner = Instance.new("UICorner")
-                    SettingsCorner.CornerRadius = UDim.new(0, 10)
-                    SettingsCorner.Parent = SettingsFrame
+                    SettingsCorner.CornerRadius = UDim.new(0, 8)
+                    SettingsCorner.Parent = SettingsButton
 
                     local SettingsStroke = Instance.new("UIStroke")
                     SettingsStroke.Color = Color3.fromRGB(147, 112, 219)
                     SettingsStroke.Thickness = 1
                     SettingsStroke.Transparency = 1
-                    SettingsStroke.Parent = SettingsFrame
+                    SettingsStroke.Parent = SettingsButton
 
-                    -- Заголовок настроек ESP
-                    local SettingsTitle = Instance.new("TextLabel")
-                    SettingsTitle.Name = "SettingsTitle"
-                    SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
-                    SettingsTitle.Position = UDim2.new(0, 0, 0, 0)
-                    SettingsTitle.Text = "Настройка ESP"
-                    SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    SettingsTitle.TextSize = 16
-                    SettingsTitle.Font = Enum.Font.SourceSansBold
-                    SettingsTitle.BackgroundTransparency = 1
-                    SettingsTitle.TextXAlignment = Enum.TextXAlignment.Center
-                    SettingsTitle.TextTransparency = 1
-                    SettingsTitle.Parent = SettingsFrame
+                    local fadeInSettings = TweenService:Create(SettingsButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+                    local fadeInSettingsStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+                    fadeInSettings:Play()
+                    fadeInSettingsStroke:Play()
 
-                    -- Крестик для закрытия
-                    local CloseButton = Instance.new("TextButton")
-                    CloseButton.Name = "CloseButton"
-                    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-                    CloseButton.Position = UDim2.new(1, -35, 0, 0)
-                    CloseButton.Text = "X"
-                    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    CloseButton.TextSize = 18
-                    CloseButton.BackgroundTransparency = 1
-                    CloseButton.TextTransparency = 1
-                    CloseButton.Parent = SettingsFrame
+                    local SettingsFrame = nil
 
-                    CloseButton.MouseButton1Click:Connect(function()
-                        local fadeOutSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
-                        local fadeOutStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
-                        local fadeOutTitle = TweenService:Create(SettingsTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-                        local fadeOutCloseButton = TweenService:Create(CloseButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-                        local fadeOutColorButton = TweenService:Create(SettingsFrame:FindFirstChild("ColorButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
-                        local fadeOutModeButton = TweenService:Create(SettingsFrame:FindFirstChild("ModeButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+                    SettingsButton.MouseButton1Click:Connect(function()
+                        if SettingsFrame then
+                            local fadeOutSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+                            local fadeOutStroke = TweenService:Create(SettingsFrame:FindFirstChild("UIStroke"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
+                            local fadeOutTitle = TweenService:Create(SettingsFrame:FindFirstChild("SettingsTitle"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
+                            local fadeOutClose = TweenService:Create(SettingsFrame:FindFirstChild("CloseButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
+                            local fadeOutColor = TweenService:Create(SettingsFrame:FindFirstChild("ColorButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+                            local fadeOutMode = TweenService:Create(SettingsFrame:FindFirstChild("ModeButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
 
-                        fadeOutSettings:Play()
-                        fadeOutStroke:Play()
-                        fadeOutTitle:Play()
-                        fadeOutCloseButton:Play()
-                        fadeOutColorButton:Play()
-                        fadeOutModeButton:Play()
+                            fadeOutSettings:Play()
+                            fadeOutStroke:Play()
+                            fadeOutTitle:Play()
+                            fadeOutClose:Play()
+                            fadeOutColor:Play()
+                            fadeOutMode:Play()
 
-                        fadeOutSettings.Completed:Connect(function()
-                            SettingsFrame:Destroy()
-                            SettingsFrame = nil
+                            fadeOutSettings.Completed:Connect(function()
+                                SettingsFrame:Destroy()
+                                SettingsFrame = nil
+                            end)
+                            return
+                        end
+
+                        SettingsFrame = Instance.new("Frame")
+                        SettingsFrame.Name = "ESPSettings"
+                        SettingsFrame.Size = UDim2.new(0, 200, 0, 150)
+                        SettingsFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+                        SettingsFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+                        SettingsFrame.BackgroundTransparency = 1
+                        SettingsFrame.Parent = XHubGUI
+
+                        local SettingsCorner = Instance.new("UICorner")
+                        SettingsCorner.CornerRadius = UDim.new(0, 10)
+                        SettingsCorner.Parent = SettingsFrame
+
+                        local SettingsStroke = Instance.new("UIStroke")
+                        SettingsStroke.Name = "UIStroke"
+                        SettingsStroke.Color = Color3.fromRGB(147, 112, 219)
+                        SettingsStroke.Thickness = 1
+                        SettingsStroke.Transparency = 1
+                        SettingsStroke.Parent = SettingsFrame
+
+                        local SettingsTitle = Instance.new("TextLabel")
+                        SettingsTitle.Name = "SettingsTitle"
+                        SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+                        SettingsTitle.Text = "Настройка ESP"
+                        SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        SettingsTitle.TextSize = 16
+                        SettingsTitle.Font = Enum.Font.SourceSansBold
+                        SettingsTitle.BackgroundTransparency = 1
+                        SettingsTitle.TextTransparency = 1
+                        SettingsTitle.TextXAlignment = Enum.TextXAlignment.Center
+                        SettingsTitle.Parent = SettingsFrame
+
+                        local CloseButton = Instance.new("TextButton")
+                        CloseButton.Name = "CloseButton"
+                        CloseButton.Size = UDim2.new(0, 30, 0, 30)
+                        CloseButton.Position = UDim2.new(1, -40, 0, 0)
+                        CloseButton.Text = "X"
+                        CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        CloseButton.TextSize = 18
+                        CloseButton.BackgroundTransparency = 1
+                        CloseButton.TextTransparency = 1
+                        CloseButton.Parent = SettingsFrame
+
+                        CloseButton.MouseButton1Click:Connect(function()
+                            local fadeOutSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+                            local fadeOutStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
+                            local fadeOutTitle = TweenService:Create(SettingsTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
+                            local fadeOutClose = TweenService:Create(CloseButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
+                            local fadeOutColor = TweenService:Create(SettingsFrame:FindFirstChild("ColorButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+                            local fadeOutMode = TweenService:Create(SettingsFrame:FindFirstChild("ModeButton"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+
+                            fadeOutSettings:Play()
+                            fadeOutStroke:Play()
+                            fadeOutTitle:Play()
+                            fadeOutClose:Play()
+                            fadeOutColor:Play()
+                            fadeOutMode:Play()
+
+                            fadeOutSettings.Completed:Connect(function()
+                                SettingsFrame:Destroy()
+                                SettingsFrame = nil
+                            end)
+                        end)
+
+                        local ColorButton = Instance.new("TextButton")
+                        ColorButton.Name = "ColorButton"
+                        ColorButton.Size = UDim2.new(0, 160, 0, 30)
+                        ColorButton.Position = UDim2.new(0, 20, 0, 40)
+                        ColorButton.BackgroundColor3 = func.Setting.Color
+                        ColorButton.Text = "Цвет ESP"
+                        ColorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        ColorButton.TextSize = 14
+                        ColorButton.BackgroundTransparency = 1
+                        ColorButton.TextTransparency = 1
+                        ColorButton.Parent = SettingsFrame
+
+                        local ColorCorner = Instance.new("UICorner")
+                        ColorCorner.CornerRadius = UDim.new(0, 5)
+                        ColorCorner.Parent = ColorButton
+
+                        ColorButton.MouseButton1Click:Connect(function()
+                            local r = math.random(0, 255)
+                            local g = math.random(0, 255)
+                            local b = math.random(0, 255)
+                            func.Setting.Color = Color3.fromRGB(r, g, b)
+                            ColorButton.BackgroundColor3 = func.Setting.Color
+                        end)
+
+                        local ModeButton = Instance.new("TextButton")
+                        ModeButton.Name = "ModeButton"
+                        ModeButton.Size = UDim2.new(0, 160, 0, 30)
+                        ModeButton.Position = UDim2.new(0, 20, 0, 80)
+                        ModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                        ModeButton.Text = func.Setting.Mode == "AlwaysOnTop" and "Показывать" or "Не показывать"
+                        ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        ModeButton.TextSize = 14
+                        ModeButton.BackgroundTransparency = 1
+                        ModeButton.TextTransparency = 1
+                        ModeButton.Parent = SettingsFrame
+
+                        local ModeCorner = Instance.new("UICorner")
+                        ModeCorner.CornerRadius = UDim.new(0, 5)
+                        ModeCorner.Parent = ModeButton
+
+                        ModeButton.MouseButton1Click:Connect(function()
+                            func.Setting.Mode = func.Setting.Mode == "AlwaysOnTop" and "ThroughWalls" or "AlwaysOnTop"
+                            ModeButton.Text = func.Setting.Mode == "AlwaysOnTop" and "Показывать" or "Не показывать"
+                        end)
+
+                        local fadeInSettingsFrame = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
+                        local fadeInSettingsStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+                        local fadeInSettingsTitle = TweenService:Create(SettingsTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+                        local fadeInSettingsClose = TweenService:Create(CloseButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+                        local fadeInColorButton = TweenService:Create(ColorButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+                        local fadeInModeButton = TweenService:Create(ModeButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+
+                        fadeInSettingsFrame:Play()
+                        fadeInSettingsStroke:Play()
+                        fadeInSettingsTitle:Play()
+                        fadeInSettingsClose:Play()
+                        fadeInColorButton:Play()
+                        fadeInModeButton:Play()
+
+                        -- Перемещение меню настроек
+                        local DraggingSettings = false
+                        local DragStartSettings = nil
+                        local StartPosSettings = nil
+
+                        SettingsTitle.InputBegan:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                DraggingSettings = true
+                                DragStartSettings = input.Position
+                                StartPosSettings = SettingsFrame.Position
+                            end
+                        end)
+
+                        SettingsTitle.InputEnded:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                DraggingSettings = false
+                            end
+                        end)
+
+                        UserInputService.InputChanged:Connect(function(input)
+                            if DraggingSettings and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                                local delta = input.Position - DragStartSettings
+                                local newPosX = StartPosSettings.X.Offset + delta.X
+                                local newPosY = StartPosSettings.Y.Offset + delta.Y
+                                SettingsFrame.Position = UDim2.new(StartPosSettings.X.Scale, newPosX, StartPosSettings.Y.Scale, newPosY)
+                            end
                         end)
                     end)
+                end
+            else
+                local RejoinButton = Instance.new("TextButton")
+                RejoinButton.Size = UDim2.new(0, 30, 0, 30)
+                RejoinButton.Position = UDim2.new(1, -40, 0, 5)
+                RejoinButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                RejoinButton.Text = "▼"
+                RejoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                RejoinButton.TextSize = 14
+                RejoinButton.BackgroundTransparency = 1
+                RejoinButton.TextTransparency = 1
+                RejoinButton.Parent = FuncFrame
 
-                    -- Перемещение меню настроек ESP
-                    local Dragging = false
-                    local DragStart = nil
-                    local StartPos = nil
+                local RejoinCorner = Instance.new("UICorner")
+                RejoinCorner.CornerRadius = UDim.new(0, 8)
+                RejoinCorner.Parent = RejoinButton
 
-                    SettingsTitle.InputBegan:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            Dragging = true
-                            DragStart = input.Position
-                            StartPos = SettingsFrame.Position
-                        end
-                    end)
+                local RejoinStroke = Instance.new("UIStroke")
+                RejoinStroke.Color = Color3.fromRGB(147, 112, 219)
+                RejoinStroke.Thickness = 1
+                RejoinStroke.Transparency = 1
+                RejoinStroke.Parent = RejoinButton
 
-                    SettingsTitle.InputEnded:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            Dragging = false
-                        end
-                    end)
+                local fadeInRejoin = TweenService:Create(RejoinButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+                local fadeInRejoinStroke = TweenService:Create(RejoinStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
+                fadeInRejoin:Play()
+                fadeInRejoinStroke:Play()
 
-                    UserInputService.InputChanged:Connect(function(input)
-                        if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                            local delta = input.Position - DragStart
-                            local newPosX = StartPos.X.Offset + delta.X
-                            local newPosY = StartPos.Y.Offset + delta.Y
-                            SettingsFrame.Position = UDim2.new(StartPos.X.Scale, newPosX, StartPos.Y.Scale, newPosY)
-                        end
-                    end)
-
-                    local ColorButton = Instance.new("TextButton")
-                    ColorButton.Name = "ColorButton"
-                    ColorButton.Size = UDim2.new(0, 150, 0, 30)
-                    ColorButton.Position = UDim2.new(0, 15, 0, 40)
-                    ColorButton.BackgroundColor3 = func.Setting.Color
-                    ColorButton.Text = "Цвет ESP"
-                    ColorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    ColorButton.TextSize = 14
-                    ColorButton.BackgroundTransparency = 1
-                    ColorButton.TextTransparency = 1
-                    ColorButton.Parent = SettingsFrame
-
-                    local ColorCorner = Instance.new("UICorner")
-                    ColorCorner.CornerRadius = UDim.new(0, 5)
-                    ColorCorner.Parent = ColorButton
-
-                    ColorButton.MouseButton1Click:Connect(function()
-                        local r = math.random(0, 255)
-                        local g = math.random(0, 255)
-                        local b = math.random(0, 255)
-                        func.Setting.Color = Color3.fromRGB(r, g, b)
-                        ColorButton.BackgroundColor3 = func.Setting.Color
-                    end)
-
-                    local ModeButton = Instance.new("TextButton")
-                    ModeButton.Name = "ModeButton"
-                    ModeButton.Size = UDim2.new(0, 150, 0, 30)
-                    ModeButton.Position = UDim2.new(0, 15, 0, 80)
-                    ModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-                    ModeButton.Text = "Режим: " .. (func.Setting.Mode == "AlwaysOnTop" and "AOT" or "TW")
-                    ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    ModeButton.TextSize = 14
-                    ModeButton.BackgroundTransparency = 1
-                    ModeButton.TextTransparency = 1
-                    ModeButton.Parent = SettingsFrame
-
-                    local ModeCorner = Instance.new("UICorner")
-                    ModeCorner.CornerRadius = UDim.new(0, 5)
-                    ModeCorner.Parent = ModeButton
-
-                    ModeButton.MouseButton1Click:Connect(function()
-                        func.Setting.Mode = func.Setting.Mode == "AlwaysOnTop" and "ThroughWalls" or "AlwaysOnTop"
-                        ModeButton.Text = "Режим: " .. (func.Setting.Mode == "AlwaysOnTop" and "AOT" or "TW")
-                    end)
-
-                    -- Анимация появления
-                    local fadeInSettings = TweenService:Create(SettingsFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
-                    local fadeInStroke = TweenService:Create(SettingsStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
-                    local fadeInTitle = TweenService:Create(SettingsTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-                    local fadeInCloseButton = TweenService:Create(CloseButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-                    local fadeInColorButton = TweenService:Create(ColorButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
-                    local fadeInModeButton = TweenService:Create(ModeButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
-
-                    fadeInSettings:Play()
-                    fadeInStroke:Play()
-                    fadeInTitle:Play()
-                    fadeInCloseButton:Play()
-                    fadeInColorButton:Play()
-                    fadeInModeButton:Play()
-                end)
+                RejoinButton.MouseButton1Click:Connect(func.Action)
             end
-        else
-            local RejoinButton = Instance.new("TextButton")
-            RejoinButton.Size = UDim2.new(0, 24, 0, 24)
-            RejoinButton.Position = UDim2.new(1, -34, 0, 3)
-            RejoinButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-            RejoinButton.Text = "▼"
-            RejoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            RejoinButton.TextSize = 14
-            RejoinButton.Parent = FuncFrame
-
-            local RejoinCorner = Instance.new("UICorner")
-            RejoinCorner.CornerRadius = UDim.new(1, 0)
-            RejoinCorner.Parent = RejoinButton
-
-            RejoinButton.MouseButton1Click:Connect(func.Action)
         end
-    end
 
-    local IsCategoryExpanded = false
-    CategoryToggleButton.MouseButton1Click:Connect(function()
-        IsCategoryExpanded = not IsCategoryExpanded
-        local funcHeight = 0
-        for _, func in pairs(category.Functions) do
-            local height = 30
-            if func.HasInput then height = height + 30 end
-            funcHeight = funcHeight + height + FunctionsListLayout.Padding.Offset
-        end
-        local newHeight = IsCategoryExpanded and UDim2.new(1, 0, 0, funcHeight) or UDim2.new(1, 0, 0, 0)
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(FunctionsFrame, tweenInfo, {Size = newHeight})
-        tween:Play()
-        CategoryToggleButton.Text = IsCategoryExpanded and "▲" or "▼"
-        CategoryFrame.Size = IsCategoryExpanded and UDim2.new(1, 0, 0, 30 + funcHeight) or UDim2.new(1, 0, 0, 30)
-        UpdateCanvasSize()
+        UpdateCanvasSize(FunctionsFrame, FunctionsListLayout)
     end)
+
+    UpdateCanvasSize(CategoriesFrame, CategoriesListLayout)
 end
 
--- Инициализация CanvasSize
-UpdateCanvasSize()
-
--- Анимация сворачивания/разворачивания меню
-local IsExpanded = false
-ToggleButton.MouseButton1Click:Connect(function()
-    IsExpanded = not IsExpanded
-    local newSize = IsExpanded and UDim2.new(0, 200, 0, 250) or UDim2.new(0, 200, 0, 40)
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(MainFrame, tweenInfo, {Size = newSize})
-    tween:Play()
-    ToggleButton.Text = IsExpanded and "▼" or "▲"
-    ScrollFrame.Visible = IsExpanded
+-- Сохранение позиции прокрутки
+CategoriesFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+    SavedState.ScrollPositions.Categories = CategoriesFrame.CanvasPosition.Y
 end)
 
--- Плавное перемещение главного меню
-local Dragging = false
-local DragStart = nil
-local StartPos = nil
-
-Title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = true
-        DragStart = input.Position
-        StartPos = MainFrame.Position
-    end
+FunctionsFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+    SavedState.ScrollPositions.Functions = FunctionsFrame.CanvasPosition.Y
 end)
 
-Title.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - DragStart
-        local newPosX = StartPos.X.Offset + delta.X
-        local newPosY = StartPos.Y.Offset + delta.Y
-        MainFrame.Position = UDim2.new(StartPos.X.Scale, newPosX, StartPos.Y.Scale, newPosY)
-    end
-end)
+-- Восстановление позиции прокрутки
+local function RestoreScrollPositions()
+    CategoriesFrame.CanvasPosition = Vector2.new(0, SavedState.ScrollPositions.Categories)
+    FunctionsFrame.CanvasPosition = Vector2.new(0, SavedState.ScrollPositions.Functions)
+end
 
 -- Функционал Speed Boost
 local function UpdateSpeedBoost()
@@ -687,7 +791,7 @@ local function UpdateNoclip()
     end
 end
 
--- Функционал ESP для игроков
+-- Функционал ESP
 local ESPObjects = {}
 local function CreateESP(player)
     if player == Players.LocalPlayer or ESPObjects[player] then return end
@@ -729,82 +833,6 @@ local function UpdateESP()
     end
 end
 
--- Общий функционал ESP для объектов
-local function CreateObjectESP(object, setting, storage)
-    if storage[object] then return end
-    if object:IsA("Model") and object.PrimaryPart then
-        local highlight = Instance.new("Highlight")
-        highlight.FillTransparency = setting.Transparency
-        highlight.FillColor = setting.Color
-        highlight.OutlineTransparency = 0
-        highlight.OutlineColor = Color3.fromRGB(147, 112, 219)
-        highlight.Adornee = object.PrimaryPart
-        highlight.DepthMode = setting.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-        highlight.Parent = object.PrimaryPart
-        storage[object] = highlight
-    end
-end
-
-local function UpdateObjectESP(setting, storage, targetNames)
-    if not setting.Enabled then
-        for _, highlight in pairs(storage) do
-            highlight.Enabled = false
-        end
-        return
-    end
-    -- Удалить выделения для объектов, которые больше не существуют
-    for object, highlight in pairs(storage) do
-        if not object.Parent then
-            highlight:Destroy()
-            storage[object] = nil
-        end
-    end
-    -- Добавить выделения для новых объектов
-    for _, object in pairs(game.Workspace:GetDescendants()) do
-        if object:IsA("Model") and table.find(targetNames, object.Name) and not storage[object] then
-            CreateObjectESP(object, setting, storage)
-        end
-    end
-    -- Обновить существующие выделения
-    for object, highlight in pairs(storage) do
-        if object.PrimaryPart then
-            highlight.FillColor = setting.Color
-            highlight.FillTransparency = setting.Transparency
-            highlight.DepthMode = setting.Mode == "AlwaysOnTop" and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-        end
-    end
-end
-
--- Функционал ESP для дверей
-local ESPDoorsObjects = {}
-local function UpdateESPDoors()
-    UpdateObjectESP(Settings.ESP_Doors, ESPDoorsObjects, {"Door"})
-end
-
--- Функционал ESP для предметов
-local ESPItemsObjects = {}
-local function UpdateESPItems()
-    UpdateObjectESP(Settings.ESP_Items, ESPItemsObjects, {"Key", "Book", "Candle", "Lighter", "Item"})
-end
-
--- Функционал ESP для сущностей
-local ESPEntitiesObjects = {}
-local function UpdateESPEntities()
-    UpdateObjectESP(Settings.ESP_Entities, ESPEntitiesObjects, {"Figure", "Rush", "Ambush", "Screech", "A90", "Snare"})
-end
-
--- Функционал ESP для мебели
-local ESPFurnitureObjects = {}
-local function UpdateESPFurniture()
-    UpdateObjectESP(Settings.ESP_Furniture, ESPFurnitureObjects, {"Locker", "Bed", "Table", "Chair", "Cabinet", "Lever"})
-end
-
--- Функционал ESP для картин
-local ESPPicturesObjects = {}
-local function UpdateESPPictures()
-    UpdateObjectESP(Settings.ESP_Pictures, ESPPicturesObjects, {"Picture", "Painting", "Poster"})
-end
-
 -- Функционал Infinite Jump
 local InfiniteJumpConnection = nil
 local function UpdateInfiniteJump()
@@ -831,11 +859,6 @@ RunService.Heartbeat:Connect(function()
     UpdateFOVBoost()
     UpdateNoclip()
     UpdateESP()
-    UpdateESPDoors()
-    UpdateESPItems()
-    UpdateESPEntities()
-    UpdateESPFurniture()
-    UpdateESPPictures()
     UpdateInfiniteJump()
 end)
 
@@ -863,14 +886,16 @@ end)
 -- Ключ-система
 local KeySystemGUI = Instance.new("ScreenGui")
 KeySystemGUI.Name = "XKeySystem"
-KeySystemGUI.Parent = game:GetService("CoreGui")
+KeySystemGUI.Parent = CoreGui
 KeySystemGUI.IgnoreGuiInset = true
 KeySystemGUI.DisplayOrder = 9999
+KeySystemGUI.Enabled = true
 
 local KeySystemFrame = Instance.new("Frame")
 KeySystemFrame.Size = UDim2.new(1, 0, 1, 0)
 KeySystemFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 KeySystemFrame.BackgroundTransparency = 1
+KeySystemFrame.Active = true
 KeySystemFrame.Parent = KeySystemGUI
 
 local fadeInFrame = TweenService:Create(KeySystemFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
@@ -879,7 +904,7 @@ fadeInFrame:Play()
 local KeySystemTitle = Instance.new("TextLabel")
 KeySystemTitle.Size = UDim2.new(0, 400, 0, 50)
 KeySystemTitle.Position = UDim2.new(0.5, -200, 0.2, -25)
-KeySystemTitle.Text = "КЛЮЧ СИСТЕМА X HUB • 3.0.0"
+KeySystemTitle.Text = "X Hub • Ключ система"
 KeySystemTitle.TextColor3 = Color3.fromRGB(147, 112, 219)
 KeySystemTitle.TextSize = 24
 KeySystemTitle.Font = Enum.Font.SourceSansBold
@@ -893,7 +918,6 @@ fadeInTitle:Play()
 local KeyInputFrame = Instance.new("Frame")
 KeyInputFrame.Size = UDim2.new(0, 300, 0, 40)
 KeyInputFrame.Position = UDim2.new(0.5, -150, 0.4, -20)
-KeySystemFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 KeyInputFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 KeyInputFrame.BackgroundTransparency = 1
 KeyInputFrame.Parent = KeySystemFrame
@@ -950,9 +974,9 @@ ActivateStroke.Thickness = 1
 ActivateStroke.Transparency = 1
 ActivateStroke.Parent = ActivateButton
 
-local fadeInActivateButton = TweenService:Create(ActivateButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+local fadeInActivate = TweenService:Create(ActivateButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
 local fadeInActivateStroke = TweenService:Create(ActivateStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
-fadeInActivateButton:Play()
+fadeInActivate:Play()
 fadeInActivateStroke:Play()
 
 local GetKeyButton = Instance.new("TextButton")
@@ -977,9 +1001,9 @@ GetKeyStroke.Thickness = 1
 GetKeyStroke.Transparency = 1
 GetKeyStroke.Parent = GetKeyButton
 
-local fadeInGetKeyButton = TweenService:Create(GetKeyButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
+local fadeInGetKey = TweenService:Create(GetKeyButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0})
 local fadeInGetKeyStroke = TweenService:Create(GetKeyStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0})
-fadeInGetKeyButton:Play()
+fadeInGetKey:Play()
 fadeInGetKeyStroke:Play()
 
 local FeedbackLabel = Instance.new("TextLabel")
@@ -1007,39 +1031,29 @@ local function ShowFeedback(text, color)
 end
 
 local CorrectKey = "X"
-local isKeySystemActive = true
-
-MainFrame.Active = false
-MainFrame.BackgroundTransparency = 1
-Title.TextTransparency = 1
-ToggleButton.TextTransparency = 1
 
 GetKeyButton.MouseButton1Click:Connect(function()
-    local message = "Вбейте юзернейм в телеграмм и напишите данному человеку чтобы он вам выдал данный ключ, вот юзернейм создателя скрипта: @XHubCreator."
     pcall(function()
-        setclipboard(message)
-        ShowFeedback("Текст скопирован в буфер обмена!", Color3.fromRGB(147, 112, 219))
+        setclipboard("Ваш ключ: X")
+        ShowFeedback("Текст скопирован в ваш буфер обмена!", Color3.fromRGB(147, 112, 219))
     end)
 end)
 
 ActivateButton.MouseButton1Click:Connect(function()
-    if not isKeySystemActive then return end
     local inputKey = KeyInput.Text
     if inputKey == "" then
-        ShowFeedback("Пожалуйста, введите ключ.", Color3.fromRGB(255, 0, 0))
+        ShowFeedback("Введите ключ!", Color3.fromRGB(255, 0, 0))
     elseif inputKey == CorrectKey then
-        ShowFeedback("Ключ успешно активирован!", Color3.fromRGB(147, 112, 219))
+        ShowFeedback("Ключ активирован!", Color3.fromRGB(147, 112, 219))
         wait(1)
-        isKeySystemActive = false
-
         local fadeOutFrame = TweenService:Create(KeySystemFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
         local fadeOutTitle = TweenService:Create(KeySystemTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
         local fadeOutInputFrame = TweenService:Create(KeyInputFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
         local fadeOutInputStroke = TweenService:Create(KeyInputStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
         local fadeOutInput = TweenService:Create(KeyInput, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-        local fadeOutActivateButton = TweenService:Create(ActivateButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+        local fadeOutActivate = TweenService:Create(ActivateButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
         local fadeOutActivateStroke = TweenService:Create(ActivateStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
-        local fadeOutGetKeyButton = TweenService:Create(GetKeyButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
+        local fadeOutGetKey = TweenService:Create(GetKeyButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1})
         local fadeOutGetKeyStroke = TweenService:Create(GetKeyStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
 
         fadeOutFrame:Play()
@@ -1047,21 +1061,18 @@ ActivateButton.MouseButton1Click:Connect(function()
         fadeOutInputFrame:Play()
         fadeOutInputStroke:Play()
         fadeOutInput:Play()
-        fadeOutActivateButton:Play()
+        fadeOutActivate:Play()
         fadeOutActivateStroke:Play()
-        fadeOutGetKeyButton:Play()
+        fadeOutGetKey:Play()
         fadeOutGetKeyStroke:Play()
 
         fadeOutFrame.Completed:Connect(function()
             KeySystemGUI:Destroy()
-            MainFrame.Active = true
-            local fadeInMainFrame = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
-            local fadeInTitle = TweenService:Create(Title, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-            local fadeInToggleButton = TweenService:Create(ToggleButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-
-            fadeInMainFrame:Play()
-            fadeInTitle:Play()
-            fadeInToggleButton:Play()
+            ShowMiniButton()
+            if SavedState.MainMenuOpen then
+                ToggleMainMenu()
+                RestoreScrollPositions()
+            end
         end)
     else
         ShowFeedback("Неверный ключ, пожалуйста, получите его.", Color3.fromRGB(255, 0, 0))
