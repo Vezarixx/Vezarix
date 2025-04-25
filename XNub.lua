@@ -90,10 +90,10 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Основной фрейм
+-- Основной фрейм (уменьшен до 600x400)
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 900, 0, 500)
-MainFrame.Position = UDim2.new(0.5, -450, 0.5, -250)
+MainFrame.Size = UDim2.new(0, 600, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 MainFrame.BackgroundTransparency = 1
 MainFrame.Active = true
@@ -112,7 +112,7 @@ MainStroke.Parent = MainFrame
 
 -- Заголовок
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 50)
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
 TitleBar.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 TitleBar.BackgroundTransparency = 1
 TitleBar.Parent = MainFrame
@@ -129,10 +129,10 @@ TitleStroke.Parent = TitleBar
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0.7, 0, 1, 0)
-Title.Position = UDim2.new(0, 20, 0, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Text = "X Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 24
+Title.TextSize = 20
 Title.Font = Enum.Font.SourceSansBold
 Title.BackgroundTransparency = 1
 Title.TextTransparency = 1
@@ -141,29 +141,29 @@ Title.Parent = TitleBar
 
 -- Кнопка закрытия
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -40, 0, 10)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -35, 0, 7)
 CloseButton.Text = "X"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 18
+CloseButton.TextSize = 16
 CloseButton.BackgroundTransparency = 1
 CloseButton.TextTransparency = 1
 CloseButton.Parent = TitleBar
 
 -- Разделитель
 local Divider = Instance.new("Frame")
-Divider.Size = UDim2.new(0, 2, 0, 450)
-Divider.Position = UDim2.new(0, 250, 0, 50)
+Divider.Size = UDim2.new(0, 2, 0, 360)
+Divider.Position = UDim2.new(0, 150, 0, 40)
 Divider.BackgroundColor3 = Color3.fromRGB(147, 112, 219)
 Divider.BackgroundTransparency = 1
 Divider.Parent = MainFrame
 
 -- Левая часть (категории)
 local CategoriesFrame = Instance.new("ScrollingFrame")
-CategoriesFrame.Size = UDim2.new(0, 250, 0, 450)
-CategoriesFrame.Position = UDim2.new(0, 0, 0, 50)
+CategoriesFrame.Size = UDim2.new(0, 150, 0, 360)
+CategoriesFrame.Position = UDim2.new(0, 0, 0, 40)
 CategoriesFrame.BackgroundTransparency = 1
-CategoriesFrame.ScrollBarThickness = 4
+CategoriesFrame.ScrollBarThickness = 3
 CategoriesFrame.ScrollBarImageColor3 = Color3.fromRGB(147, 112, 219)
 CategoriesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 CategoriesFrame.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -176,10 +176,10 @@ CategoriesListLayout.Parent = CategoriesFrame
 
 -- Правая часть (функции)
 local FunctionsFrame = Instance.new("ScrollingFrame")
-FunctionsFrame.Size = UDim2.new(0, 648, 0, 450)
-FunctionsFrame.Position = UDim2.new(0, 252, 0, 50)
+FunctionsFrame.Size = UDim2.new(0, 448, 0, 360)
+FunctionsFrame.Position = UDim2.new(0, 152, 0, 40)
 FunctionsFrame.BackgroundTransparency = 1
-FunctionsFrame.ScrollBarThickness = 4
+FunctionsFrame.ScrollBarThickness = 3
 FunctionsFrame.ScrollBarImageColor3 = Color3.fromRGB(147, 112, 219)
 FunctionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 FunctionsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -285,7 +285,7 @@ local Categories = {
 -- Создание категорий
 for i, category in pairs(Categories) do
     local CategoryButtonFrame = Instance.new("Frame")
-    CategoryButtonFrame.Size = UDim2.new(1, -10, 0, 40)
+    CategoryButtonFrame.Size = UDim2.new(1, -10, 0, 35)
     CategoryButtonFrame.Position = UDim2.new(0, 5, 0, 0)
     CategoryButtonFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     CategoryButtonFrame.BackgroundTransparency = 1
@@ -308,7 +308,7 @@ for i, category in pairs(Categories) do
     CategoryButton.BackgroundTransparency = 1
     CategoryButton.Text = category.Name
     CategoryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CategoryButton.TextSize = 16
+    CategoryButton.TextSize = 14
     CategoryButton.Font = Enum.Font.SourceSansBold
     CategoryButton.TextTransparency = 1
     CategoryButton.Parent = CategoryButtonFrame
@@ -354,7 +354,7 @@ for i, category in pairs(Categories) do
         -- Создание функций
         for j, func in pairs(category.Functions) do
             local FuncFrame = Instance.new("Frame")
-            local height = func.HasInput and 70 or 40
+            local height = func.HasInput and 60 or 35
             FuncFrame.Size = UDim2.new(1, -10, 0, height)
             FuncFrame.Position = UDim2.new(0, 5, 0, 0)
             FuncFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -373,11 +373,11 @@ for i, category in pairs(Categories) do
             FuncStroke.Parent = FuncFrame
 
             local FuncLabel = Instance.new("TextLabel")
-            FuncLabel.Size = UDim2.new(0.7, 0, 0, 40)
+            FuncLabel.Size = UDim2.new(0.7, 0, 0, 35)
             FuncLabel.Position = UDim2.new(0, 10, 0, 0)
             FuncLabel.Text = func.Name
             FuncLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            FuncLabel.TextSize = 14
+            FuncLabel.TextSize = 12
             FuncLabel.Font = Enum.Font.SourceSans
             FuncLabel.BackgroundTransparency = 1
             FuncLabel.TextTransparency = 1
@@ -394,8 +394,8 @@ for i, category in pairs(Categories) do
 
             if func.Name ~= "Перезайти" then
                 local ToggleButton = Instance.new("TextButton")
-                ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-                ToggleButton.Position = UDim2.new(1, -40, 0, 5)
+                ToggleButton.Size = UDim2.new(0, 25, 0, 25)
+                ToggleButton.Position = UDim2.new(1, -35, 0, 5)
                 ToggleButton.BackgroundColor3 = func.Setting.Enabled and Color3.fromRGB(147, 112, 219) or Color3.fromRGB(255, 255, 255)
                 ToggleButton.Text = ""
                 ToggleButton.BackgroundTransparency = 1
@@ -430,12 +430,12 @@ for i, category in pairs(Categories) do
 
                 if func.HasInput then
                     local InputField = Instance.new("TextBox")
-                    InputField.Size = UDim2.new(0.8, 0, 0, 25)
-                    InputField.Position = UDim2.new(0, 10, 0, 40)
+                    InputField.Size = UDim2.new(0.8, 0, 0, 20)
+                    InputField.Position = UDim2.new(0, 10, 0, 35)
                     InputField.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                     InputField.Text = tostring(func.Setting.Value)
                     InputField.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    InputField.TextSize = 14
+                    InputField.TextSize = 12
                     InputField.Font = Enum.Font.SourceSans
                     InputField.BackgroundTransparency = 1
                     InputField.TextTransparency = 1
@@ -471,12 +471,12 @@ for i, category in pairs(Categories) do
 
                 if func.HasSettings then
                     local SettingsButton = Instance.new("TextButton")
-                    SettingsButton.Size = UDim2.new(0, 30, 0, 30)
-                    SettingsButton.Position = UDim2.new(1, -80, 0, 5)
+                    SettingsButton.Size = UDim2.new(0, 25, 0, 25)
+                    SettingsButton.Position = UDim2.new(1, -65, 0, 5)
                     SettingsButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                     SettingsButton.Text = "⚙"
                     SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    SettingsButton.TextSize = 14
+                    SettingsButton.TextSize = 12
                     SettingsButton.BackgroundTransparency = 1
                     SettingsButton.TextTransparency = 1
                     SettingsButton.Parent = FuncFrame
@@ -523,8 +523,8 @@ for i, category in pairs(Categories) do
 
                         SettingsFrame = Instance.new("Frame")
                         SettingsFrame.Name = "ESPSettings"
-                        SettingsFrame.Size = UDim2.new(0, 200, 0, 150)
-                        SettingsFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+                        SettingsFrame.Size = UDim2.new(0, 150, 0, 120)
+                        SettingsFrame.Position = UDim2.new(0.5, -75, 0.5, -60)
                         SettingsFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
                         SettingsFrame.BackgroundTransparency = 1
                         SettingsFrame.Parent = XHubGUI
@@ -542,10 +542,10 @@ for i, category in pairs(Categories) do
 
                         local SettingsTitle = Instance.new("TextLabel")
                         SettingsTitle.Name = "SettingsTitle"
-                        SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+                        SettingsTitle.Size = UDim2.new(1, 0, 0, 25)
                         SettingsTitle.Text = "Настройка ESP"
                         SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        SettingsTitle.TextSize = 16
+                        SettingsTitle.TextSize = 14
                         SettingsTitle.Font = Enum.Font.SourceSansBold
                         SettingsTitle.BackgroundTransparency = 1
                         SettingsTitle.TextTransparency = 1
@@ -554,11 +554,11 @@ for i, category in pairs(Categories) do
 
                         local CloseButton = Instance.new("TextButton")
                         CloseButton.Name = "CloseButton"
-                        CloseButton.Size = UDim2.new(0, 30, 0, 30)
-                        CloseButton.Position = UDim2.new(1, -40, 0, 0)
+                        CloseButton.Size = UDim2.new(0, 25, 0, 25)
+                        CloseButton.Position = UDim2.new(1, -35, 0, 0)
                         CloseButton.Text = "X"
                         CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        CloseButton.TextSize = 18
+                        CloseButton.TextSize = 16
                         CloseButton.BackgroundTransparency = 1
                         CloseButton.TextTransparency = 1
                         CloseButton.Parent = SettingsFrame
@@ -586,12 +586,12 @@ for i, category in pairs(Categories) do
 
                         local ColorButton = Instance.new("TextButton")
                         ColorButton.Name = "ColorButton"
-                        ColorButton.Size = UDim2.new(0, 160, 0, 30)
-                        ColorButton.Position = UDim2.new(0, 20, 0, 40)
+                        ColorButton.Size = UDim2.new(0, 120, 0, 25)
+                        ColorButton.Position = UDim2.new(0, 15, 0, 35)
                         ColorButton.BackgroundColor3 = func.Setting.Color
                         ColorButton.Text = "Цвет ESP"
                         ColorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        ColorButton.TextSize = 14
+                        ColorButton.TextSize = 12
                         ColorButton.BackgroundTransparency = 1
                         ColorButton.TextTransparency = 1
                         ColorButton.Parent = SettingsFrame
@@ -610,12 +610,12 @@ for i, category in pairs(Categories) do
 
                         local ModeButton = Instance.new("TextButton")
                         ModeButton.Name = "ModeButton"
-                        ModeButton.Size = UDim2.new(0, 160, 0, 30)
-                        ModeButton.Position = UDim2.new(0, 20, 0, 80)
+                        ModeButton.Size = UDim2.new(0, 120, 0, 25)
+                        ModeButton.Position = UDim2.new(0, 15, 0, 65)
                         ModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                         ModeButton.Text = func.Setting.Mode == "AlwaysOnTop" and "Показывать" or "Не показывать"
                         ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        ModeButton.TextSize = 14
+                        ModeButton.TextSize = 12
                         ModeButton.BackgroundTransparency = 1
                         ModeButton.TextTransparency = 1
                         ModeButton.Parent = SettingsFrame
@@ -674,12 +674,12 @@ for i, category in pairs(Categories) do
                 end
             else
                 local RejoinButton = Instance.new("TextButton")
-                RejoinButton.Size = UDim2.new(0, 30, 0, 30)
-                RejoinButton.Position = UDim2.new(1, -40, 0, 5)
+                RejoinButton.Size = UDim2.new(0, 25, 0, 25)
+                RejoinButton.Position = UDim2.new(1, -35, 0, 5)
                 RejoinButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 RejoinButton.Text = "▼"
                 RejoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                RejoinButton.TextSize = 14
+                RejoinButton.TextSize = 12
                 RejoinButton.BackgroundTransparency = 1
                 RejoinButton.TextTransparency = 1
                 RejoinButton.Parent = FuncFrame
@@ -902,11 +902,11 @@ local fadeInFrame = TweenService:Create(KeySystemFrame, TweenInfo.new(0.5, Enum.
 fadeInFrame:Play()
 
 local KeySystemTitle = Instance.new("TextLabel")
-KeySystemTitle.Size = UDim2.new(0, 400, 0, 50)
-KeySystemTitle.Position = UDim2.new(0.5, -200, 0.2, -25)
+KeySystemTitle.Size = UDim2.new(0, 300, 0, 40)
+KeySystemTitle.Position = UDim2.new(0.5, -150, 0.2, -20)
 KeySystemTitle.Text = "X Hub • Ключ система"
 KeySystemTitle.TextColor3 = Color3.fromRGB(147, 112, 219)
-KeySystemTitle.TextSize = 24
+KeySystemTitle.TextSize = 20
 KeySystemTitle.Font = Enum.Font.SourceSansBold
 KeySystemTitle.BackgroundTransparency = 1
 KeySystemTitle.TextTransparency = 1
@@ -916,8 +916,8 @@ local fadeInTitle = TweenService:Create(KeySystemTitle, TweenInfo.new(0.5, Enum.
 fadeInTitle:Play()
 
 local KeyInputFrame = Instance.new("Frame")
-KeyInputFrame.Size = UDim2.new(0, 300, 0, 40)
-KeyInputFrame.Position = UDim2.new(0.5, -150, 0.4, -20)
+KeyInputFrame.Size = UDim2.new(0, 250, 0, 35)
+KeyInputFrame.Position = UDim2.new(0.5, -125, 0.4, -17)
 KeyInputFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 KeyInputFrame.BackgroundTransparency = 1
 KeyInputFrame.Parent = KeySystemFrame
@@ -940,7 +940,7 @@ KeyInput.Text = ""
 KeyInput.PlaceholderText = "Ввести ключ"
 KeyInput.PlaceholderColor3 = Color3.fromRGB(147, 112, 219)
 KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyInput.TextSize = 16
+KeyInput.TextSize = 14
 KeyInput.Font = Enum.Font.SourceSans
 KeyInput.TextTransparency = 1
 KeyInput.Parent = KeyInputFrame
@@ -953,12 +953,12 @@ fadeInInputStroke:Play()
 fadeInInput:Play()
 
 local ActivateButton = Instance.new("TextButton")
-ActivateButton.Size = UDim2.new(0, 140, 0, 40)
-ActivateButton.Position = UDim2.new(0.5, -150, 0.5, 0)
+ActivateButton.Size = UDim2.new(0, 120, 0, 35)
+ActivateButton.Position = UDim2.new(0.5, -125, 0.5, 0)
 ActivateButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 ActivateButton.Text = "Активировать ключ"
 ActivateButton.TextColor3 = Color3.fromRGB(147, 112, 219)
-ActivateButton.TextSize = 16
+ActivateButton.TextSize = 14
 ActivateButton.Font = Enum.Font.SourceSansSemibold
 ActivateButton.TextTransparency = 1
 ActivateButton.BackgroundTransparency = 1
@@ -980,12 +980,12 @@ fadeInActivate:Play()
 fadeInActivateStroke:Play()
 
 local GetKeyButton = Instance.new("TextButton")
-GetKeyButton.Size = UDim2.new(0, 140, 0, 40)
-GetKeyButton.Position = UDim2.new(0.5, 10, 0.5, 0)
+GetKeyButton.Size = UDim2.new(0, 120, 0, 35)
+GetKeyButton.Position = UDim2.new(0.5, 5, 0.5, 0)
 GetKeyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 GetKeyButton.Text = "Получить ключ"
 GetKeyButton.TextColor3 = Color3.fromRGB(147, 112, 219)
-GetKeyButton.TextSize = 16
+GetKeyButton.TextSize = 14
 GetKeyButton.Font = Enum.Font.SourceSansSemibold
 GetKeyButton.TextTransparency = 1
 GetKeyButton.BackgroundTransparency = 1
@@ -1007,12 +1007,12 @@ fadeInGetKey:Play()
 fadeInGetKeyStroke:Play()
 
 local FeedbackLabel = Instance.new("TextLabel")
-FeedbackLabel.Size = UDim2.new(0, 300, 0, 30)
-FeedbackLabel.Position = UDim2.new(0.5, -150, 0.6, 0)
+FeedbackLabel.Size = UDim2.new(0, 250, 0, 25)
+FeedbackLabel.Position = UDim2.new(0.5, -125, 0.6, 0)
 FeedbackLabel.BackgroundTransparency = 1
 FeedbackLabel.Text = ""
 FeedbackLabel.TextColor3 = Color3.fromRGB(147, 112, 219)
-FeedbackLabel.TextSize = 14
+FeedbackLabel.TextSize = 12
 FeedbackLabel.Font = Enum.Font.SourceSans
 FeedbackLabel.TextTransparency = 1
 FeedbackLabel.Parent = KeySystemFrame
