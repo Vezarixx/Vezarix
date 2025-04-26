@@ -4,7 +4,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 
 -- Глобальные настройки
@@ -103,6 +102,7 @@ NotificationListLayout.Parent = NotificationContainer
 
 -- Функция создания уведомлений
 local function CreateNotification(message, isError)
+    if not NotificationContainer.Parent then return end
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(1, 0, 0, 60)
     NotificationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -141,6 +141,7 @@ local function CreateNotification(message, isError)
 
     spawn(function()
         wait(3)
+        if not NotificationFrame.Parent then return end
         local fadeOut = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
         local fadeOutStroke = TweenService:Create(NotifStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Transparency = 1})
         local fadeOutText = TweenService:Create(NotifText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
@@ -148,7 +149,9 @@ local function CreateNotification(message, isError)
         fadeOutStroke:Play()
         fadeOutText:Play()
         fadeOut.Completed:Connect(function()
-            NotificationFrame:Destroy()
+            if NotificationFrame.Parent then
+                NotificationFrame:Destroy()
+            end
         end)
     end)
 end
@@ -175,12 +178,18 @@ local Categories = {
         Functions = {
             {Name = "Noclip", Setting = Settings.Noclip, Action = function() UpdateNoclip() end},
             {Name = "Перезайти", Action = function()
-                local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-                for _, server in pairs(servers.data) do
-                    if server.playing < server.maxPlayers and server.playing > 0 then
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
-                        break
+                local success, servers = pcall(function()
+                    return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+                end)
+                if success and servers.data then
+                    for _, server in pairs(servers.data) do
+                        if server.playing < server.maxPlayers and server.playing > 0 then
+                            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
+                            break
+                        end
                     end
+                else
+                    CreateNotification("Не удалось получить список серверов!", true)
                 end
             end}
         }
@@ -274,6 +283,7 @@ local function CreateCategoryUI(category, index)
             ToggleStroke.Parent = ToggleButton
 
             local function UpdateToggleVisual()
+                if not ToggleButton.Parent then return end
                 local tween = TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     BackgroundColor3 = func.Setting.Enabled and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(50, 50, 50)
                 })
@@ -351,6 +361,7 @@ local function CreateCategoryUI(category, index)
 
                 SettingsButton.MouseButton1Click:Connect(function()
                     if SettingsFrame then
+                        if not SettingsFrame.Parent then return end
                         local fadeOut = TweenService:Create(SettingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
                         for _, child in pairs(SettingsFrame:GetDescendants()) do
                             if child:IsA("TextLabel") or child:IsA("TextButton") then
@@ -361,8 +372,10 @@ local function CreateCategoryUI(category, index)
                         end
                         fadeOut:Play()
                         fadeOut.Completed:Connect(function()
-                            SettingsFrame:Destroy()
-                            SettingsFrame = nil
+                            if SettingsFrame.Parent then
+                                SettingsFrame:Destroy()
+                                SettingsFrame = nil
+                            end
                         end)
                         return
                     end
@@ -405,6 +418,7 @@ local function CreateCategoryUI(category, index)
                     CloseButton.Parent = SettingsFrame
 
                     CloseButton.MouseButton1Click:Connect(function()
+                        if not SettingsFrame.Parent then return end
                         local fadeOut = TweenService:Create(SettingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
                         for _, child in pairs(SettingsFrame:GetDescendants()) do
                             if child:IsA("TextLabel") or child:IsA("TextButton") then
@@ -415,8 +429,10 @@ local function CreateCategoryUI(category, index)
                         end
                         fadeOut:Play()
                         fadeOut.Completed:Connect(function()
-                            SettingsFrame:Destroy()
-                            SettingsFrame = nil
+                            if SettingsFrame.Parent then
+                                SettingsFrame:Destroy()
+                                SettingsFrame = nil
+                            end
                         end)
                     end)
 
@@ -582,8 +598,7 @@ end)
 -- Функционал Speed Boost
 local function UpdateSpeedBoost()
     local character = Players.LocalPlayer.Character
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
     humanoid.WalkSpeed = Settings.SpeedBoost.Enabled and Settings.SpeedBoost.Value or 16
 end
@@ -591,8 +606,7 @@ end
 -- Функционал Jump Boost
 local function UpdateJumpBoost()
     local character = Players.LocalPlayer.Character
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
     humanoid.JumpPower = Settings.JumpBoost.Enabled and Settings.JumpBoost.Value or 50
 end
@@ -682,8 +696,7 @@ local function UpdateInfiniteJump()
     if Settings.InfiniteJump.Enabled then
         InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
             local character = Players.LocalPlayer.Character
-            if not character then return end
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
@@ -693,18 +706,18 @@ end
 
 -- Обновление функций
 RunService.Heartbeat:Connect(function()
-    UpdateSpeedBoost()
-    UpdateJumpBoost()
-    UpdateFOVBoost()
-    UpdateNoclip()
-    UpdateESP()
-    UpdateInfiniteJump()
+    if Settings.SpeedBoost.Enabled then UpdateSpeedBoost() end
+    if Settings.JumpBoost.Enabled then UpdateJumpBoost() end
+    if Settings.FOVBoost.Enabled then UpdateFOVBoost() end
+    if Settings.Noclip.Enabled then UpdateNoclip() end
+    if Settings.ESP.Enabled then UpdateESP() end
+    if Settings.InfiniteJump.Enabled then UpdateInfiniteJump() end
 end)
 
 Players.LocalPlayer.CharacterAdded:Connect(function()
-    UpdateSpeedBoost()
-    UpdateJumpBoost()
-    UpdateNoclip()
+    if Settings.SpeedBoost.Enabled then UpdateSpeedBoost() end
+    if Settings.JumpBoost.Enabled then UpdateJumpBoost() end
+    if Settings.Noclip.Enabled then UpdateNoclip() end
     if Settings.ESP.Enabled then
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= Players.LocalPlayer then
@@ -850,6 +863,7 @@ FeedbackLabel.Parent = KeySystemFrame
 
 -- Анимация появления ключ-системы
 local function ShowKeySystem()
+    if not KeySystemFrame.Parent then return end
     local fadeIn = TweenService:Create(KeySystemFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
     for _, child in pairs(KeySystemFrame:GetDescendants()) do
         if child:IsA("TextLabel") or child:IsA("TextButton") then
@@ -866,13 +880,18 @@ ShowKeySystem()
 local CorrectKey = "X"
 GetKeyButton.MouseButton1Click:Connect(function()
     local message = "Свяжитесь с @XHubCreator в Telegram для получения ключа."
-    pcall(function()
+    local success, err = pcall(function()
         setclipboard(message)
-        CreateNotification("Ссылка скопирована в буфер обмена!", false)
     end)
+    if success then
+        CreateNotification("Ссылка скопирована в буфер обмена!", false)
+    else
+        CreateNotification("Ошибка копирования в буфер обмена!", true)
+    end
 end)
 
 ActivateButton.MouseButton1Click:Connect(function()
+    if not KeySystemFrame.Parent then return end
     if KeyInput.Text == "" then
         CreateNotification("Введите ключ!", true)
     elseif KeyInput.Text == CorrectKey then
@@ -887,7 +906,9 @@ ActivateButton.MouseButton1Click:Connect(function()
         end
         fadeOut:Play()
         fadeOut.Completed:Connect(function()
-            KeySystemGUI:Destroy()
+            if KeySystemGUI.Parent then
+                KeySystemGUI:Destroy()
+            end
             XHubGUI.Enabled = true
             local fadeIn = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
             for _, child in pairs(MainFrame:GetDescendants()) do
